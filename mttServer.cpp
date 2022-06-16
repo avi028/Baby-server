@@ -102,14 +102,13 @@ int main(int argc,char** argcv){
         param->client_socket = accept(listening_sock,(sockaddr*)&(param->comm_sock),&(param->comm_sock_len));        
         if(param->client_socket == -1){
                 cerr<<"connection not established"<<endl;
-            }
+        }
         else{
-                cout<<"connected to port "<<param->client_socket<<endl;
-            }
-        pthread_create(&wts[wt_itr],NULL,workerThread,(void*)param);
-        wt_itr++;
-        cout<<"thread "<<wt_itr<< "started\n";
-
+            cout<<"connected to port "<<param->client_socket<<endl;
+            wt_ids[wt_itr]= pthread_create(&wts[wt_itr],NULL,workerThread,(void*)param);
+            wt_itr++;
+            cout<<"thread "<<wt_itr<< "started\n";
+        }
     }
 
     for (int i;i<MAX_WORKER_THERAD_COUNT;i++)   

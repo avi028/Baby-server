@@ -16,10 +16,6 @@ struct params{
     socklen_t commlen;
 };
 
-void * workignThread (void * params){
-    return 0;
-}
-
 int main(int argc,char** argcv){
     // create a socket
     int listening_sock = socket(AF_INET,SOCK_STREAM,0);
