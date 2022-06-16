@@ -3,11 +3,22 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <string.h>
+#include <string.h> 
 #include <arpa/inet.h>
 #include <string>
 
 using namespace std;
+
+
+struct params{
+    int client_socket;
+    sockaddr_in commAddr;
+    socklen_t commlen;
+};
+
+void * workignThread (void * params){
+    return 0;
+}
 
 int main(int argc,char** argcv){
     // create a socket
@@ -36,6 +47,7 @@ int main(int argc,char** argcv){
     // listen on the socket
     listen(listening_sock,SOMAXCONN);
 
+    
     // create new sockaddr dedicated to a client
     sockaddr_in comm_sock;
     socklen_t comm_sock_len = sizeof(sockaddr_in);
