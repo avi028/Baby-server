@@ -6,15 +6,103 @@
 #include <string.h> 
 #include <arpa/inet.h>
 #include <string>
+#include <iterator>
+#include <sstream>
+#include <streambuf>
+#include <vector>
+#include <fstream>
 
 using namespace std;
 
+#define MAX_WORKER_THERAD_COUNT 100
+#define MAX_IMAGE_SIZE_BYTES 10000000
 
 struct params{
     int client_socket;
-    sockaddr_in commAddr;
+    sockaddr_in commSock;
     socklen_t commlen;
 };
+
+void * workingThread (void *param){
+    struct params * p = (struct params *) param;
+    
+    char buffer[8096];
+
+    int num_byte_recvd = recv(p->client_socket,buffer,8096,0);
+    string requestMsg = string(buffer,0,num_byte_recvd);
+    cout<<requestMsg;
+
+    // send the webpage data to the client 
+    // with http header info
+
+    string header ;
+    string data ;
+    
+    // get the file name to transfer 
+    istringstream issRequestMsg(requestMsg);
+
+    vector<string> parsed ((istream_iterator<string>(issRequestMsg)),istream_iterator<string>()) ;
+    // for(int i=0;i<parsed.size();i++){
+    //     cout<<parsed[i]<<endl;
+    // }
+
+    //default header, data and error code
+    int httpErrorCode = 404;
+    data = string("<head></head> <body> <h1>File Not Found </h1></body> ");
+    header = string("HTTP/1.1 ") + to_string(httpErrorCode) +string(" ok\r\n") + string("Cache-Control: no-cache, private\r\n") \
+                + string("Content-Type: text/html\r\n")+ string("Content-Length: ") +to_string(data.size()) + string("\r\n\r\n"); 
+
+    if(parsed.size()>=3 && parsed[0]=="GET"){
+
+        // read data from file 
+        if(parsed[1]=="/favicon.ico"){
+            
+            cout << " asked for Favicon"<<endl;
+
+            // look for image favicon.ico        
+            ifstream f("testWebsite/favicon.ico",ifstream::binary);
+
+            //IF found send
+            if(f.good()){
+                httpErrorCode = 200;
+                char *imgBuffer = (char *)malloc(sizeof(char)*MAX_IMAGE_SIZE_BYTES);
+            
+                // read image as data 
+                f.read(imgBuffer,sizeof(char)*MAX_IMAGE_SIZE_BYTES);
+                int imgSize = (int)f.gcount();
+                cout<<"favicon size"<<imgSize<<endl;
+                // formulation of data and header 
+                data = string(imgBuffer);
+                header = string("HTTP/1.1 ") + to_string(httpErrorCode) +string(" ok\r\n") + string("Cache-Control: no-cache, private\r\n") \
+                            + string("Content-Type: image/icon\r\n")+ string("Content-Length: ") +to_string(imgSize) + string("\r\n\r\n");             
+                free(imgBuffer);
+            }
+            else{
+                cerr<<"Favicon.ico not found"<<endl;
+            }
+            f.close();
+        }
+        else{
+            std::ifstream f ("testWebsite"+parsed[1]);
+            if(f.good()){
+    //            cout <<string("testWebsite")+parsed[1]<<endl;    
+                httpErrorCode = 200;
+                data  = string(istreambuf_iterator<char>(f),istreambuf_iterator<char>());
+                header = string("HTTP/1.1 ") + to_string(httpErrorCode) +string(" ok\r\n") + string("Cache-Control: no-cache, private\r\n") \
+                            + string("Content-Type: text/html\r\n")+ string("Content-Length: ") +to_string(data.size()) + string("\r\n\r\n"); 
+            }
+            f.close();   
+        }
+    }
+    
+    // add header to data
+    data  = header + data;
+
+    // send data to the client
+    send(p->client_socket,data.c_str(),data.size(),0);
+
+    return 0;   
+}
 
 int main(int argc,char** argcv){
     // create a socket
@@ -35,6 +123,10 @@ int main(int argc,char** argcv){
     // add address to the sockaddr_in while converting string to ipv4 address
     inet_pton(AF_INET,"127.0.0.1",&host_addr.sin_addr);
 
+    const int enable = 1;
+    if (setsockopt(listening_sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
+        cerr<<"setsockopt(SO_REUSEADDR) failed";    
+
     // bind a socket 
     if(bind(listening_sock,(sockaddr*)&host_addr,sizeof(sockaddr_in))==-1){
         cerr<<"Bind unsuccessful : Unable to bond to given socket"<<endl;
@@ -43,58 +135,30 @@ int main(int argc,char** argcv){
     // listen on the socket
     listen(listening_sock,SOMAXCONN);
 
-    
-    // create new sockaddr dedicated to a client
-    sockaddr_in comm_sock;
-    socklen_t comm_sock_len = sizeof(sockaddr_in);
-    
-    // accept request on socket
-    int client_socket = accept(listening_sock,(sockaddr*)&comm_sock,&comm_sock_len);
-    if(client_socket == -1){
-        cerr<<"connection not established"<<endl;
-    }
 
-    char host[NI_MAXHOST];
-    char serve[NI_MAXSERV];
+    int * wt_tid = (int *) malloc(sizeof(int));
+    pthread_t  * wt_pth = (pthread_t*) malloc(sizeof(int));
 
-    memset(host,0,NI_MAXHOST);
-    memset(serve,0,NI_MAXSERV);
+    int wt_itr =0;
 
-    // int result = getnameinfo((sockaddr*)&comm_sock,comm_sock_len,host,NI_MAXHOST,serve,NI_MAXSERV,0);
+    while(wt_itr < MAX_WORKER_THERAD_COUNT){
+        struct params * commPrm = (struct params *)malloc(sizeof(struct params));
+        commPrm->commlen = sizeof(sockaddr_in);
+        commPrm->client_socket = accept(listening_sock,(sockaddr*)&commPrm->commSock,&commPrm->commlen);
+        if (commPrm->client_socket !=-1){
+            cout<<"Connected to client on port "<<commPrm->client_socket<<endl; 
+            wt_tid[wt_itr]=pthread_create(&wt_pth[wt_itr],0,workingThread,(void*)commPrm);
+            wt_itr++;
+        }       
+        else{
+            cerr<<"Connection not established";
+        }
+    } 
 
-    // if(result ==0 ){ //getnameinfo is success
-    //     cout<< "host "<< host<< " , service " << serve <<endl;
-    // }
-    // else{
-    //     inet_ntop(AF_INET,&comm_sock.sin_addr,host,NI_MAXHOST);
-    //     cout<< "host "<< host<< " , service " << ntohs(comm_sock.sin_port) <<endl;    
-    // }
+    for (int i;i<MAX_WORKER_THERAD_COUNT;i++)   
+        pthread_join(wt_pth[i],0);
 
-    //receive request 
-
-    char buffer[8096];
-    int num_byte_recvd = recv(client_socket,buffer,8096,0);
-    cout<<string(buffer,0,num_byte_recvd);
-
-    // send the webpage data to the client 
-    // with http header info
-
-    string header ;
-    string data ;
-
-    data = string("<head></head> <body> <h1> Hello User</h1></body> ");
-    
-    header = string("HTTP/1.1 200 ok\r\n") + string("Cache-Control: no-cache, private\r\n") \
-                + string("Content-Type: text/html\r\n")+ string("Content-Length: ") +to_string(data.size()) + string("\r\n\r\n"); 
-
-    data  = header + data;
-
-    send(client_socket,data.c_str(),data.size(),0);
-
-    // close the socket 
-
-    close(client_socket);
+    // close listening socket
     close (listening_sock);
     return 0;
 }
-
