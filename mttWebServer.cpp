@@ -24,7 +24,7 @@ void * workingThread (void *param){
     int num_byte_recvd = recv(p->client_socket,buffer,8096,0);
     cout<<string(buffer,0,num_byte_recvd);
 
-    // send the webpage data to the client 
+    // send the webpagse data to the client 
     // with http header info
 
     string header ;
