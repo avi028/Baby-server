@@ -69,27 +69,30 @@ int main(int argc,char** argcv){
     // listen on the socket
     listen(listening_sock,SOMAXCONN);
 
-
-    int * wt_tid = (int *) malloc(sizeof(int));
     pthread_t  * wt_pth = (pthread_t*) malloc(sizeof(int));
 
     int wt_itr =0;
 
-    while(wt_itr < MAX_WORKER_THERAD_COUNT){
+    while(1){
         struct params * commPrm = (struct params *)malloc(sizeof(struct params));
         commPrm->commlen = sizeof(sockaddr_in);
         commPrm->client_socket = accept(listening_sock,(sockaddr*)&commPrm->commSock,&commPrm->commlen);
         if (commPrm->client_socket !=-1){
             cout<<"Connected to client on port "<<commPrm->client_socket<<endl; 
-            wt_tid[wt_itr]=pthread_create(&wt_pth[wt_itr],0,workingThread,(void*)commPrm);
-            wt_itr++;
+            if(pthread_create(&wt_pth[wt_itr],0,workingThread,(void*)commPrm)==0){
+                wt_itr++;
+                continue;
+            }
+            else{
+                break;
+            }
         }       
         else{
             cerr<<"Connection not established";
         }
     } 
 
-    for (int i;i<MAX_WORKER_THERAD_COUNT;i++)   
+    for (int i;i<wt_itr;i++)   
         pthread_join(wt_pth[i],0);
 
     // close listening socket

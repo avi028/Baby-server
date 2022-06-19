@@ -16,8 +16,12 @@
 #include <streambuf>
 #include <vector>
 #include <fstream>
+#include <map>
+#include <stdlib.h>
+#include <time.h>
 
 using namespace std;
+
 
 #define MAX_WORKER_THERAD_COUNT 100
 #define MAX_IMAGE_SIZE_BYTES 10000000
@@ -31,6 +35,18 @@ using namespace std;
 #define JSON    6//"json"
 #define CSS     7//"css"
 #define HTML    8//"html"
+
+// Server Types 
+#define Thread_Based_Server  1
+#define Process_Based_Server  2
+
+
+// Global variables 
+string websiteFolder;
+string IP;
+int PORT;
+int serverType;
+
 
 struct params{
     int client_socket;
@@ -80,11 +96,11 @@ int sendData(int socket,string filename,string header){
 
     int fd = open(filename.c_str(),O_RDONLY);
     if(fd == -1){
-        cerr<<filename<<endl;
-        cerr<<"file not found\n";
+        cerr<<filename<<"file not found\n";
         close(fd);
         return 0;
     }
+
     struct stat fst;
     fstat(fd,&fst);
 
@@ -119,7 +135,7 @@ void * workingThread (void *param){
 
     int num_byte_recvd = recv(p->client_socket,buffer,8096,0);
     string requestMsg = string(buffer,0,num_byte_recvd);
-//    cout<<requestMsg;
+    cout<<requestMsg;
 
     string header ;
     string data ;
@@ -144,11 +160,14 @@ void * workingThread (void *param){
         int type = parseContentType(requestedFile);
 
         if(type ==NONE){
+            
+            
             // default output of website 
             requestedFile = "/index.html";
             type = HTML;
         }
         requestedFile = string("testWebsite")+requestedFile;
+
         // check if content is available
         if(stat(requestedFile.c_str(),&fst)==0){
 
@@ -159,44 +178,44 @@ void * workingThread (void *param){
                                                         
             switch (type)
             {
-            case HTML:
-                header = header + string("Content-Type: text/html");
-                break;
-            
-            
-            case ICO:
-                header = header + string("Content-Type: image/vnd.microsoft.icon");
-                break;
-            
-            
-            case PNG:
-                header = header + string("Content-Type: image/png");
-                break;
-            
-            
-            case CSS:
-                header = header + string("Content-Type: text/css");
-                break;
-            
-            
-            case JPEG:
-                header = header + string("Content-Type: image/jpeg");
-                break;
-            
-            
-            case JSON:
-                header = header + string("Content-Type: text/json");
-                break;
-            
-            
-            case JS:
-                header = header + string("Content-Type: text/javescript");
-                break;
-            
-            
-            default:
-                header = header + string("Content-Type: text/plain");
-                break;
+                case HTML:
+                    header = header + string("Content-Type: text/html");
+                    break;
+                
+                
+                case ICO:
+                    header = header + string("Content-Type: image/vnd.microsoft.icon");
+                    break;
+                
+                
+                case PNG:
+                    header = header + string("Content-Type: image/png");
+                    break;
+                
+                
+                case CSS:
+                    header = header + string("Content-Type: text/css");
+                    break;
+                
+                
+                case JPEG:
+                    header = header + string("Content-Type: image/jpeg");
+                    break;
+                
+                
+                case JSON:
+                    header = header + string("Content-Type: text/json");
+                    break;
+                
+                
+                case JS:
+                    header = header + string("Content-Type: text/javescript");
+                    break;
+                
+                
+                default:
+                    header = header + string("Content-Type: text/plain");
+                    break;
             }
 
             // send file with updated header
@@ -211,7 +230,72 @@ void * workingThread (void *param){
     return 0;   
 }
 
+int loadConfigFile(){
+    
+    // default set 
+    websiteFolder="testWebsite";
+    IP="127.0.0.1";
+    PORT=8080;
+    serverType=Thread_Based_Server;
+
+    // if config file is available set the vairables as per the file
+    ifstream f("webServer.config");
+    if(f.good()){
+        char buffer[40000];
+        f.read(buffer,40000);
+        vector <string>tokens = str_tok(string(buffer),'\n');
+        
+        for (int i=0;i<tokens.size();i++){
+            if(tokens[i].find('#')==0){
+                continue;
+            }
+            else{
+                vector<string> subtokens = str_tok(tokens[i],':');
+                if(subtokens[0]=="WebSiteFolderName")
+                    websiteFolder = subtokens[1];
+                else if(subtokens[0]=="IP")
+                    IP=subtokens[1];
+                else if(subtokens[0]=="PORT")
+                    PORT=atoi(subtokens[1].c_str());
+                else if(subtokens[0]=="Server_Type")
+                    serverType=atoi(subtokens[1].c_str());
+            }
+        }
+    }
+}
+
+map<string,pair<string,string> > sessionKeyTable; 
+
+unsigned long long int getHash(string str){
+    unsigned long long int hash=0;
+    for (int i=0;i<str.size();i++){
+        hash = hash*10+(int)(str[i])%10;
+    }
+    return hash;
+}
+
+string getsessionKey(string user,string pass){
+    string sessionKey = to_string(getHash(user)+getHash(pass)+(unsigned long long int )rand()%10000);    
+    sessionKeyTable.insert({sessionKey,make_pair(user,pass)});
+    return sessionKey;
+}
+
+string getUserForSessionKey(string sessionKey){    
+    map<string,pair<string,string> >::iterator it = sessionKeyTable.find(sessionKey);
+    if(it!=sessionKeyTable.end()){
+        return it->second.first;
+    }
+    return NULL;
+}
+
 int main(int argc,char** argcv){
+
+    // random initialization for hashMap
+    srand(time(NULL));
+
+    // lOAD Config data from file
+    loadConfigFile();
+
     // create a socket
     int listening_sock = socket(AF_INET,SOCK_STREAM,0);
 
@@ -225,11 +309,12 @@ int main(int argc,char** argcv){
     host_addr.sin_family = AF_INET;
 
     // reverse the bits of the port fron host number to netwrok number 
-    host_addr.sin_port = htons(8081);
+    host_addr.sin_port = htons(PORT);
 
     // add address to the sockaddr_in while converting string to ipv4 address
-    inet_pton(AF_INET,"127.0.0.1",&host_addr.sin_addr);
+    inet_pton(AF_INET,IP.c_str(),&host_addr.sin_addr);
 
+    // adding reusable tag to the port
     const int enable = 1;
     if (setsockopt(listening_sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
         cerr<<"setsockopt(SO_REUSEADDR) failed";    
@@ -242,8 +327,6 @@ int main(int argc,char** argcv){
     // listen on the socket
     listen(listening_sock,SOMAXCONN);
 
-
-    int * wt_tid = (int *) malloc(sizeof(int));
     pthread_t  * wt_pth = (pthread_t*) malloc(sizeof(int));
 
     int wt_itr =0;
@@ -254,33 +337,44 @@ int main(int argc,char** argcv){
         commPrm->client_socket = accept(listening_sock,(sockaddr*)&commPrm->commSock,&commPrm->commlen);
         if (commPrm->client_socket !=-1){
 
+            
             cout<<"Connected to client on port "<<commPrm->client_socket<<endl; 
             
             //*******************creating  thread for each request *****************
             
-            wt_tid[wt_itr]=pthread_create(&wt_pth[wt_itr],0,workingThread,(void*)commPrm);
+            if(serverType == Thread_Based_Server){
+                if(pthread_create(&wt_pth[wt_itr],0,workingThread,(void*)commPrm)==0){
+                    wt_itr++;
+                    continue;
+                }
+                else{
+                    break;
+                }
+            }
 
             // ********* trying froking for each request  ***************************
+            else if (serverType == Process_Based_Server){
 
-            // int pid = fork();
-            // if(pid==0){
-            //     workingThread((void *)commPrm);
-            //     cout<<"------------child process starts----------------------"<<endl;
-            //     close(commPrm->client_socket);
-            //     cout<<"------------child process ends----------------------"<<endl;
-            //     _Exit(1);
-            // }
-            // else{
-            //     cout<<"------------parent process----------------------"<<endl;
-            //     close(commPrm->client_socket);
-            // }
+                int pid = fork();
+                if(pid==0){
+                    workingThread((void *)commPrm);
+                    // cout<<"------------child process starts----------------------"<<endl;
+                    close(commPrm->client_socket);
+                    // cout<<"------------child process ends----------------------"<<endl;
+                    _Exit(1);
+                }
+                else{
+                    // cout<<"------------parent process----------------------"<<endl;
+                    close(commPrm->client_socket);
+                }
+            }
         }       
         else{
             cerr<<"Connection not established";
         }
     } 
-
-    for (int i;i<MAX_WORKER_THERAD_COUNT;i++)   
+   
+    for (int i;i<wt_itr;i++)   
         pthread_join(wt_pth[i],0);
 
     // close listening socket

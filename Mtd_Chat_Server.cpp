@@ -86,7 +86,6 @@ int main(int argc,char** argcv){
     }
     
     // workerthreadsId's
-    int * wt_ids = (int *) malloc(sizeof(int)*MAX_WORKER_THERAD_COUNT);
     pthread_t *wts = (pthread_t*) malloc(sizeof(pthread_t)*MAX_WORKER_THERAD_COUNT);
 
     // worker thread iterator
@@ -105,18 +104,20 @@ int main(int argc,char** argcv){
         }
         else{
             cout<<"connected to port "<<param->client_socket<<endl;
-            wt_ids[wt_itr]= pthread_create(&wts[wt_itr],NULL,workerThread,(void*)param);
-            wt_itr++;
+            if(pthread_create(&wts[wt_itr],NULL,workerThread,(void*)param)){
+                wt_itr++;
+            }else{
+                break;
+            }
             cout<<"thread "<<wt_itr<< "started\n";
         }
     }
 
-    for (int i;i<MAX_WORKER_THERAD_COUNT;i++)   
+    for (int i;i<wt_itr;i++)   
         pthread_join(wts[i],0);
 
     close (listening_sock);
     free(wts);
-    free(wt_ids);
     return 0;
 }
 
