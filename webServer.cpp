@@ -27,14 +27,16 @@ using namespace std;
 #define MAX_IMAGE_SIZE_BYTES 10000000
 
 // Content Types
-#define NONE    1
-#define ICO  2
-#define JS  3
-#define PNG 4
-#define JPEG    5
+#define NONE    1 // "Error in URL"
+#define ICO  2 // "ico"
+#define JS  3   // "js"
+#define PNG 4   // "png"
+#define JPEG    5 // "jpeg"
 #define JSON    6//"json"
 #define CSS     7//"css"
 #define HTML    8//"html"
+#define HTML_GET 9
+#define DEFAULT  10// "/"
 
 // Server Types 
 #define Thread_Based_Server  1
@@ -54,7 +56,57 @@ struct params{
     socklen_t commlen;
 };
 
+/********************************************
+
+    /index.html ?   name=john   &   pass=doe
+
+_name
+_ext
+_numberOfArg
+_arg1Name
+_arg1Value
+_arg2Name
+_arg2Value
+_arg3Name
+_arg3Value
+....
+...
+..
+.
+*********************************************/
+
+vector<string> urlParser(string url){
+    vector<string> tokens;
+    int start =0 ;
+    string charSet = ".?=&";
+    int charSetItr=0;
+    string copy = "";
+
+    // first _name of file 
+    for (int i=0;i<url.size();i++){
+        if(charSet[charSetItr]==url[i]){
+            tokens.push_back(copy);
+            charSetItr++;
+            if(charSetItr==4)
+                charSetItr=2;
+            copy="";
+        }
+        else{
+            copy+=url[i];
+        }
+    }
+    
+    tokens.push_back(copy);
+
+    for(int i=0;i<tokens.size();i++){
+        cout<<tokens[i]<<endl;
+    }
+    return tokens;
+}
+
+
 vector<string> str_tok(string str,char delimeter){
+    urlParser(str);
     vector<string> tokens;
     int start =0 ;
     string copy = str;
@@ -68,9 +120,9 @@ vector<string> str_tok(string str,char delimeter){
     return tokens;
 }
 
-int parseContentType(string filename){
+int parseContentType(vector<string> tokens){
     //   ico png jpeg json js css html none
-    vector<string> tokens = str_tok(filename,'.');
+    // vector<string> tokens = str_tok(filename,'.');
 
     if (tokens.size()>1){
         if(tokens[1]=="ico")
@@ -85,10 +137,16 @@ int parseContentType(string filename){
             return JS;
         else if(tokens[1]=="css")
             return CSS;
-        else if(tokens[1]=="html")
+        else if(tokens[1]=="html"){
+            if(tokens.size()>2){
+                return HTML_GET;
+            }   
             return HTML;
+        }
     }
-    
+    else{
+        return DEFAULT;
+    }
     return NONE;
 }
 
@@ -129,13 +187,14 @@ int sendData(int socket,string filename,string header){
 }
 
 void * workingThread (void *param){
+
     struct params * p = (struct params *) param;
     
     char buffer[8096];
 
     int num_byte_recvd = recv(p->client_socket,buffer,8096,0);
     string requestMsg = string(buffer,0,num_byte_recvd);
-    cout<<requestMsg;
+    cout<<requestMsg ;
 
     string header ;
     string data ;
@@ -153,28 +212,53 @@ void * workingThread (void *param){
 
     if(parsed.size()>=3 && parsed[0]=="GET"){
         
-        string requestedFile = parsed[1];
+        string url = parsed[1];
         struct stat fst;
 
-        // get content type request
-        int type = parseContentType(requestedFile);
+        // parse the URL    
+        vector<string> tokens = urlParser(url);
 
-        if(type ==NONE){
-            
-            
+        // get content type request
+        int type = parseContentType(tokens);
+
+        string requestedFile = "";
+        string sessionKey = "";
+        if(type == DEFAULT){
+
             // default output of website 
             requestedFile = "/index.html";
             type = HTML;
         }
-        requestedFile = string("testWebsite")+requestedFile;
+        requestedFile = websiteFolder+tokens[0]+tokens[1];
+
+        // check if authentication is required
+
+        if(type == HTML_GET){
+            if(tokens[0] == "/index"){
+                if(tokens.size()>6 && tokens[2]=="name" && tokens[4]=="pass"){
+                    if(tokens[3]=="John" && tokens[5]=="123"){
+                        sessionKey = getsessionKey(tokens[3],tokens[5]);
+                        requestedFile = websiteFolder + "/dashboard.html";
+                    }
+                    else{
+                        requestedFile = websiteFolder + "/index.html";
+                    }
+                }
+                else{
+                    type = NONE;
+                }
+            }
+        }
 
         // check if content is available
-        if(stat(requestedFile.c_str(),&fst)==0){
+
+        if(stat(requestedFile.c_str(),&fst)==0 && type!=NONE){
 
             httpErrorCode = 200;
+
             // set header as per the content
-            header = string("HTTP/1.1 ")    + to_string(httpErrorCode) +string(" ok\r\n") \
-                                               + string("Cache-Control: no-cache, private\r\n");
+            header = string("HTTP/1.1 ") + to_string(httpErrorCode) +string(" ok\r\n") \
+                        + string("Cache-Control: no-cache, private\r\n");
                                                         
             switch (type)
             {
@@ -182,6 +266,10 @@ void * workingThread (void *param){
                     header = header + string("Content-Type: text/html");
                     break;
                 
+                case HTML_GET:
+                    header = header + string("Content-Type: text/html") \
+                                 + string("Set-Cookie: sessionId=")+sessionKey+string("; Max-Age=2529000");
+                    break;
                 
                 case ICO:
                     header = header + string("Content-Type: image/vnd.microsoft.icon");
@@ -207,18 +295,15 @@ void * workingThread (void *param){
                     header = header + string("Content-Type: text/json");
                     break;
                 
-                
                 case JS:
                     header = header + string("Content-Type: text/javescript");
                     break;
-                
                 
                 default:
                     header = header + string("Content-Type: text/plain");
                     break;
             }
 
-            // send file with updated header
             sendData(p->client_socket,requestedFile,header);    
         }
         else{
@@ -262,6 +347,10 @@ int loadConfigFile(){
             }
         }
     }
+    else{
+        return 0;
+    }
+    return 1;
 }
 
 map<string,pair<string,string> > sessionKeyTable; 
@@ -352,7 +441,7 @@ int main(int argc,char** argcv){
                 }
             }
 
-            // ********* trying froking for each request  ***************************
+            // *************** trying froking for each request  ***************************
             else if (serverType == Process_Based_Server){
 
                 int pid = fork();
