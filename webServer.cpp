@@ -19,7 +19,6 @@
 #include <map>
 #include <stdlib.h>
 #include <time.h>
-
 using namespace std;
 
 
@@ -186,6 +185,63 @@ int sendData(int socket,string filename,string header){
     return 1;
 }
 
+struct clientArg{
+    string name;
+    string value;
+};
+
+
+struct serviceResponse{
+    string reqHeader;
+    string response;
+    int responseType;
+};
+
+
+map<string,string> db_table;
+
+// resolve the clinet request to the service and return the appropriate response 
+struct serviceResponse resolveClientArg(string serviceName , struct clientArg * args , int argCount){
+    struct serviceResponse sr;
+    
+    // check if the service exists 
+    if(serviceName == "/index" && argCount ==2){
+
+        // check the args are as per the service 
+        if(args[0].name=="name" && args[1].name=="pass"){
+            // do the service 
+            if(db_table[args[0].value]==args[1].value){
+                sr.response =  "/dashboard.html";
+                sr.reqHeader = " " ; 
+                sr.responseType = HTML_GET;
+            }
+            else{
+                sr.response =  "/unauthoreised.html";
+                sr.reqHeader = " " ; 
+                sr.responseType = HTML_GET;
+            }
+        }
+        else{
+            sr.responseType = NONE;
+        }
+    }
+    else if(serviceName == "/register" && argCount == 2){
+
+        // check the args are as per the service 
+        if(args[0].name=="name" && args[1].name=="pass"){
+                db_table[args[0].value] = args[1].value;
+                sr.response =  "/dashboard.html";
+                sr.reqHeader = " " ; 
+                sr.responseType = HTML_GET;
+        }
+        else{
+            sr.responseType = NONE;
+        }
+    }
+    // return the response 
+    return sr;
+}
+
 void * workingThread (void *param){
 
     struct params * p = (struct params *) param;
@@ -222,43 +278,32 @@ void * workingThread (void *param){
         int type = parseContentType(tokens);
 
         string requestedFile = "";
-        string sessionKey = "";
-        if(type == DEFAULT){
 
+        if(type == DEFAULT){
             // default output of website 
             requestedFile = "/index.html";
             type = HTML;
         }
-        requestedFile = websiteFolder+tokens[0]+tokens[1];
+        requestedFile = websiteFolder+tokens[0]+"."+tokens[1];
 
         // check if authentication is required
+        struct serviceResponse sr;
+        struct clientArg * cg ;
 
         if(type == HTML_GET){
-            if(tokens[0] == "/index"){
-                if(tokens.size()>6 && tokens[2]=="name" && tokens[4]=="pass"){
-                    if(tokens[3]=="John" && tokens[5]=="123"){
-                        sessionKey = getsessionKey(tokens[3],tokens[5]);
-                        requestedFile = websiteFolder + "/dashboard.html";
-                    }
-                    else{
-                        requestedFile = websiteFolder + "/index.html";
-                    }
-                }
-                else{
-                    type = NONE;
-                }
-            }
+            int argCount = (tokens.size()-2)/2;
+            cg = (struct clientArg *) malloc(sizeof(struct clientArg)*argCount);
+            sr = resolveClientArg(tokens[0],cg, argCount);
         }
 
         // check if content is available
-
         if(stat(requestedFile.c_str(),&fst)==0 && type!=NONE){
 
             httpErrorCode = 200;
 
             // set header as per the content
-            header = string("HTTP/1.1 ") + to_string(httpErrorCode) +string(" ok\r\n") \
-                        + string("Cache-Control: no-cache, private\r\n");
+            header = string("HTTP/1.1 ") + to_string(httpErrorCode) +string(" ok\r\n") ;
+
                                                         
             switch (type)
             {
@@ -267,8 +312,7 @@ void * workingThread (void *param){
                     break;
                 
                 case HTML_GET:
-                    header = header + string("Content-Type: text/html") \
-                                 + string("Set-Cookie: sessionId=")+sessionKey+string("; Max-Age=2529000");
+                    header = header + string("Content-Type: text/html") + sr.reqHeader;
                     break;
                 
                 case ICO:
