@@ -42,6 +42,13 @@ using namespace std;
 #define Process_Based_Server  2
 
 
+#define MAX_GET_ARGS 10
+#define NUM 1
+#define CHAR 2
+
+#define DEBUG   true
+#define print_debug(x) if(DEBUG) cout<<#x<<"\t"<<x<<endl
+
 // Global variables 
 string websiteFolder;
 string IP;
@@ -74,38 +81,107 @@ _arg3Value
 .
 *********************************************/
 
-vector<string> urlParser(string url){
-    vector<string> tokens;
+struct clientArg{
+    string name;
+    string value;
+};
+
+struct urlDecode{
+string service;
+string ext;
+int numberOfArg;
+struct clientArg  cg[MAX_GET_ARGS];
+bool valid;
+};
+
+struct serviceResponse{
+    string reqHeader;
+    string response;
+    int responseType;
+};
+
+map<string,string> db_table;
+
+int isNumChar(char c){
+    if(48 <= c && c<=57)
+        return NUM;
+    if((65 <= c && c<=90) || (97<=c && c<=122))
+        return CHAR;
+    return 0;
+}
+
+
+struct urlDecode  urlParser(string url){
+    
+    struct urlDecode ud;
     int start =0 ;
     string charSet = ".?=&";
-    int charSetItr=0;
     string copy = "";
+    bool  argsEnabled = false;
+    ud.valid = true;
+    ud.service = "";
+    ud.ext = "";
 
     // first _name of file 
-    for (int i=0;i<url.size();i++){
-        if(charSet[charSetItr]==url[i]){
-            tokens.push_back(copy);
-            charSetItr++;
-            if(charSetItr==4)
-                charSetItr=2;
-            copy="";
+    string * s = &ud.service;
+    int i=0;
+
+    while(isNumChar(url[i]) || url[i]=='/')
+        *s+=url[i++];
+
+    for (;i<url.size();i++){
+
+        if( isNumChar(url[i]) || url[i]=='/'){
+            *s+=url[i];
+        }
+        //.
+        else if(url[i]==charSet[0]){
+            ud.ext="";
+            s = &ud.ext;
+        }
+        // ?
+        else if(url[i]==charSet[1]){
+            ud.numberOfArg=1;
+            ud.cg[ud.numberOfArg-1].name="";
+            s  = &(ud.cg[ud.numberOfArg-1].name) ;
+        }
+        //=
+        else if(url[i]==charSet[2] && ud.cg[ud.numberOfArg-1].name!=""){
+            ud.cg[ud.numberOfArg-1].value="";
+            s = &(ud.cg[ud.numberOfArg-1].value);
+        }
+        // &
+        else if(url[i]==charSet[3] && ud.cg[ud.numberOfArg-1].value!=""){
+            ud.numberOfArg+=1;
+            ud.cg[ud.numberOfArg-1].name="";
+            s  = &(ud.cg[ud.numberOfArg-1].name) ;
         }
         else{
-            copy+=url[i];
+            ud.valid = false;
+            break;
         }
     }
-    
-    tokens.push_back(copy);
 
-    for(int i=0;i<tokens.size();i++){
-        cout<<tokens[i]<<endl;
-    }
-    return tokens;
+
+    // if(ud.valid==true &&)
+    // if(ud.valid==true && ud.cg[ud.numberOfArg-1].name!=""){
+    //     ud.cg[ud.numberOfArg-1].value = copy;
+    //     copy="";
+    // }
+    // debug
+    print_debug(ud.service);
+    print_debug(ud.ext);
+    print_debug(ud.cg[0].name);
+    print_debug(ud.cg[0].value);
+    print_debug(ud.cg[1].name);
+    print_debug(ud.cg[1].value);
+    print_debug(ud.numberOfArg);
+    return ud;
 }
 
 
 vector<string> str_tok(string str,char delimeter){
-    urlParser(str);
+    // urlParser(str);
     vector<string> tokens;
     int start =0 ;
     string copy = str;
@@ -119,34 +195,50 @@ vector<string> str_tok(string str,char delimeter){
     return tokens;
 }
 
-int parseContentType(vector<string> tokens){
-    //   ico png jpeg json js css html none
-    // vector<string> tokens = str_tok(filename,'.');
+map<string,pair<string,string> > sessionKeyTable; 
 
-    if (tokens.size()>1){
-        if(tokens[1]=="ico")
-            return ICO;
-        else if(tokens[1]=="png")
-            return PNG;
-        else if (tokens[1]=="jpeg")
-            return JPEG;
-        else if(tokens[1]=="json")
-            return JSON;
-        else if(tokens[1]=="js")
-            return JS;
-        else if(tokens[1]=="css")
-            return CSS;
-        else if(tokens[1]=="html"){
-            if(tokens.size()>2){
-                return HTML_GET;
-            }   
-            return HTML;
-        }
+unsigned long long int getHash(string str){
+    unsigned long long int hash=0;
+    for (int i=0;i<str.size();i++){
+        hash = hash*10+(int)(str[i])%10;
     }
-    else{
-        return DEFAULT;
+    return hash;
+}
+
+string getsessionKey(string user,string pass){
+    string sessionKey = to_string(getHash(user)+getHash(pass)+(unsigned long long int )rand()%10000);    
+    sessionKeyTable.insert({sessionKey,make_pair(user,pass)});
+    return sessionKey;
+}
+
+string getUserForSessionKey(string sessionKey){    
+    map<string,pair<string,string> >::iterator it = sessionKeyTable.find(sessionKey);
+    if(it!=sessionKeyTable.end()){
+        return it->second.first;
     }
-    return NONE;
+    return NULL;
+}
+
+
+int parseContentType(string filename){
+    //   ico png jpeg json js css html none
+    vector<string> tokens = str_tok(filename,'.');
+
+    if(tokens[1]=="ico")
+        return ICO;
+    else if(tokens[1]=="png")
+        return PNG;
+    else if (tokens[1]=="jpeg")
+        return JPEG;
+    else if(tokens[1]=="json")
+        return JSON;
+    else if(tokens[1]=="js")
+        return JS;
+    else if(tokens[1]=="css")
+        return CSS;
+    else if(tokens[1]=="html"){
+        return HTML;                
+    }
 }
 
 int sendData(int socket,string filename,string header){
@@ -185,40 +277,45 @@ int sendData(int socket,string filename,string header){
     return 1;
 }
 
-struct clientArg{
-    string name;
-    string value;
-};
-
-
-struct serviceResponse{
-    string reqHeader;
-    string response;
-    int responseType;
-};
-
-
-map<string,string> db_table;
-
 // resolve the clinet request to the service and return the appropriate response 
 struct serviceResponse resolveClientArg(string serviceName , struct clientArg * args , int argCount){
     struct serviceResponse sr;
     
     // check if the service exists 
-    if(serviceName == "/index" && argCount ==2){
+    if(serviceName == "/" && argCount ==2){
 
         // check the args are as per the service 
         if(args[0].name=="name" && args[1].name=="pass"){
             // do the service 
-            if(db_table[args[0].value]==args[1].value){
+            if(db_table.size()>0 && (db_table[args[0].value]==args[1].value)){
                 sr.response =  "/dashboard.html";
-                sr.reqHeader = " " ; 
-                sr.responseType = HTML_GET;
+                sr.reqHeader = "Cookie: sessionId="+getsessionKey(args[0].value,args[1].value) ; 
+                sr.responseType = HTML;
             }
             else{
                 sr.response =  "/unauthoreised.html";
                 sr.reqHeader = " " ; 
-                sr.responseType = HTML_GET;
+                sr.responseType = HTML;
+            }
+        }
+        else{
+            sr.responseType = NONE;
+        }
+    }
+   else if(serviceName == "/index" && argCount ==2){
+
+        // check the args are as per the service 
+        if(args[0].name=="name" && args[1].name=="pass"){
+            // do the service 
+            if(db_table.size()>0 && (db_table[args[0].value]==args[1].value)){
+                sr.response =  "/dashboard.html";
+                sr.reqHeader = "Cookie: sessionId="+getsessionKey(args[0].value,args[1].value) ; 
+                sr.responseType = HTML;
+            }
+            else{
+                sr.response =  "/unautho.html";
+                sr.reqHeader = " " ; 
+                sr.responseType = HTML;
             }
         }
         else{
@@ -231,8 +328,8 @@ struct serviceResponse resolveClientArg(string serviceName , struct clientArg * 
         if(args[0].name=="name" && args[1].name=="pass"){
                 db_table[args[0].value] = args[1].value;
                 sr.response =  "/dashboard.html";
-                sr.reqHeader = " " ; 
-                sr.responseType = HTML_GET;
+                sr.reqHeader = "Cookie: sessionId="+getsessionKey(args[0].value,args[1].value) ; 
+                sr.responseType = HTML;
         }
         else{
             sr.responseType = NONE;
@@ -270,51 +367,41 @@ void * workingThread (void *param){
         
         string url = parsed[1];
         struct stat fst;
+        string requestedFile = "";
+        struct serviceResponse sr;
 
         // parse the URL    
-        vector<string> tokens = urlParser(url);
+        struct urlDecode ud= urlParser(url);
 
-        // get content type request
-        int type = parseContentType(tokens);
+        if(ud.valid){
+            
+            sr.reqHeader = "";
 
-        string requestedFile = "";
-
-        if(type == DEFAULT){
-            // default output of website 
-            requestedFile = "/index.html";
-            type = HTML;
-        }
-        requestedFile = websiteFolder+tokens[0]+"."+tokens[1];
-
-        // check if authentication is required
-        struct serviceResponse sr;
-        struct clientArg * cg ;
-
-        if(type == HTML_GET){
-            int argCount = (tokens.size()-2)/2;
-            cg = (struct clientArg *) malloc(sizeof(struct clientArg)*argCount);
-            sr = resolveClientArg(tokens[0],cg, argCount);
+            if(ud.numberOfArg>0){
+                sr = resolveClientArg(ud.service,ud.cg, ud.numberOfArg);
+                requestedFile = websiteFolder +  sr.response;
+            }
+            else if(ud.service=="/"){
+                requestedFile = websiteFolder + "/index.html";
+            }
+            else {
+                requestedFile = websiteFolder+ud.service+"."+ud.ext;
+            }
         }
 
         // check if content is available
-        if(stat(requestedFile.c_str(),&fst)==0 && type!=NONE){
+        if(stat(requestedFile.c_str(),&fst)==0 && ud.valid){
 
             httpErrorCode = 200;
+            header = string("HTTP/1.1 ") + to_string(httpErrorCode) +string(" ok\r\n") + sr.reqHeader ;
 
-            // set header as per the content
-            header = string("HTTP/1.1 ") + to_string(httpErrorCode) +string(" ok\r\n") ;
-
-                                                        
+            int type =  parseContentType(requestedFile);                                               
             switch (type)
             {
                 case HTML:
                     header = header + string("Content-Type: text/html");
                     break;
-                
-                case HTML_GET:
-                    header = header + string("Content-Type: text/html") + sr.reqHeader;
-                    break;
-                
+                                
                 case ICO:
                     header = header + string("Content-Type: image/vnd.microsoft.icon");
                     break;
@@ -395,30 +482,6 @@ int loadConfigFile(){
         return 0;
     }
     return 1;
-}
-
-map<string,pair<string,string> > sessionKeyTable; 
-
-unsigned long long int getHash(string str){
-    unsigned long long int hash=0;
-    for (int i=0;i<str.size();i++){
-        hash = hash*10+(int)(str[i])%10;
-    }
-    return hash;
-}
-
-string getsessionKey(string user,string pass){
-    string sessionKey = to_string(getHash(user)+getHash(pass)+(unsigned long long int )rand()%10000);    
-    sessionKeyTable.insert({sessionKey,make_pair(user,pass)});
-    return sessionKey;
-}
-
-string getUserForSessionKey(string sessionKey){    
-    map<string,pair<string,string> >::iterator it = sessionKeyTable.find(sessionKey);
-    if(it!=sessionKeyTable.end()){
-        return it->second.first;
-    }
-    return NULL;
 }
 
 int main(int argc,char** argcv){
