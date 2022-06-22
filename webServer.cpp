@@ -81,7 +81,7 @@ _arg3Value
 .
 *********************************************/
 
-struct clientArg{
+struct requestArg{
     string name;
     string value;
 };
@@ -90,7 +90,7 @@ struct urlDecode{
 string service;
 string ext;
 int numberOfArg;
-struct clientArg  cg[MAX_GET_ARGS];
+struct requestArg  cg[MAX_GET_ARGS];
 bool valid;
 };
 
@@ -110,7 +110,6 @@ int isNumChar(char c){
     return 0;
 }
 
-
 struct urlDecode  urlParser(string url){
     
     struct urlDecode ud;
@@ -121,11 +120,11 @@ struct urlDecode  urlParser(string url){
     ud.valid = true;
     ud.service = "";
     ud.ext = "";
+    ud.numberOfArg=0;
 
     // first _name of file 
     string * s = &ud.service;
     int i=0;
-
     while(isNumChar(url[i]) || url[i]=='/')
         *s+=url[i++];
 
@@ -162,13 +161,6 @@ struct urlDecode  urlParser(string url){
         }
     }
 
-
-    // if(ud.valid==true &&)
-    // if(ud.valid==true && ud.cg[ud.numberOfArg-1].name!=""){
-    //     ud.cg[ud.numberOfArg-1].value = copy;
-    //     copy="";
-    // }
-    // debug
     print_debug(ud.service);
     print_debug(ud.ext);
     print_debug(ud.cg[0].name);
@@ -181,7 +173,6 @@ struct urlDecode  urlParser(string url){
 
 
 vector<string> str_tok(string str,char delimeter){
-    // urlParser(str);
     vector<string> tokens;
     int start =0 ;
     string copy = str;
@@ -268,7 +259,7 @@ int sendData(int socket,string filename,string header){
     // send content 
     while (fsize > bsize){
         sendfile(socket,fd,NULL,bsize);
-        fsize-=bsize;
+        fsize-=bsize; 
     }
     sendfile(socket,fd,NULL,fsize);
     
@@ -277,43 +268,72 @@ int sendData(int socket,string filename,string header){
     return 1;
 }
 
-// resolve the clinet request to the service and return the appropriate response 
-struct serviceResponse resolveClientArg(string serviceName , struct clientArg * args , int argCount){
-    struct serviceResponse sr;
+#define MAX_COOKIE_COUNT 10
+
+int  getCookies(struct reqHeader reqh, struct requestArg * cookieSet){    
+
+    string data = "";    
+    for (int i=0;i<reqh.reqArgCnt;i++){
+        if(reqh.headerArgList[i].name == "Cookie"){
+            data = reqh.headerArgList[i].value;
+            break;
+        }
+    }
+    if(data == ""){
+        return -1;
+    }
+
+    string * tmp ;
+    int argCount=0;
     
+    cookieSet[argCount].name="";
+    tmp = &(cookieSet[argCount].name);
+    
+    for(int i=0;i<data.size();i++){
+        if(data[i]==';'){
+            i++;
+            argCount++;
+            cookieSet[argCount].name="";
+        }
+        else if(data[i]=='='){
+            cookieSet[argCount].value="";
+            tmp = &(cookieSet[argCount].value);
+        }
+        else{
+            *tmp+=data[i];
+        }
+    }
+    return argCount;
+}
+
+// resolve the clinet request to the service and return the appropriate response 
+struct serviceResponse resolverequestArg(string serviceName , struct requestArg * args , int argCount,struct reqHeader requestHeader){
+    struct serviceResponse sr; 
+    struct requestArg cookieSet[MAX_COOKIE_COUNT];
+
     // check if the service exists 
     if(serviceName == "/" && argCount ==2){
 
         // check the args are as per the service 
-        if(args[0].name=="name" && args[1].name=="pass"){
+        if((args[0].name=="name" || serviceName == "/index") && args[1].name=="pass" ){
             // do the service 
+            int cookieCount=0;
+            
+            if((cookieCount = getCookies(requestHeader,&(cookieSet[0]))) >0){
+                if(cookieSet[0].name=="sessionId"){
+                    // if(sessionKeyTable.find(cookieSet[0].value)){
+                    //     // perform certain process 
+                    // }
+                }
+            }
+
             if(db_table.size()>0 && (db_table[args[0].value]==args[1].value)){
                 sr.response =  "/dashboard.html";
-                sr.reqHeader = "Cookie: sessionId="+getsessionKey(args[0].value,args[1].value) ; 
+                sr.reqHeader = "Set-Cookie: sessionId="+getsessionKey(args[0].value,args[1].value) ; 
                 sr.responseType = HTML;
             }
             else{
                 sr.response =  "/unauthoreised.html";
-                sr.reqHeader = " " ; 
-                sr.responseType = HTML;
-            }
-        }
-        else{
-            sr.responseType = NONE;
-        }
-    }
-   else if(serviceName == "/index" && argCount ==2){
-
-        // check the args are as per the service 
-        if(args[0].name=="name" && args[1].name=="pass"){
-            // do the service 
-            if(db_table.size()>0 && (db_table[args[0].value]==args[1].value)){
-                sr.response =  "/dashboard.html";
-                sr.reqHeader = "Cookie: sessionId="+getsessionKey(args[0].value,args[1].value) ; 
-                sr.responseType = HTML;
-            }
-            else{
-                sr.response =  "/unautho.html";
                 sr.reqHeader = " " ; 
                 sr.responseType = HTML;
             }
@@ -328,7 +348,7 @@ struct serviceResponse resolveClientArg(string serviceName , struct clientArg * 
         if(args[0].name=="name" && args[1].name=="pass"){
                 db_table[args[0].value] = args[1].value;
                 sr.response =  "/dashboard.html";
-                sr.reqHeader = "Cookie: sessionId="+getsessionKey(args[0].value,args[1].value) ; 
+                sr.reqHeader = "Set-Cookie: sessionId="+getsessionKey(args[0].value,args[1].value) ; 
                 sr.responseType = HTML;
         }
         else{
@@ -339,6 +359,103 @@ struct serviceResponse resolveClientArg(string serviceName , struct clientArg * 
     return sr;
 }
 
+// GET / HTTP/1.1
+// Host: 127.0.0.1:8080
+// Connection: keep-alive
+// sec-ch-ua: "Chromium";v="103", ".Not/A)Brand";v="99"
+// sec-ch-ua-mobile: ?0
+// sec-ch-ua-platform: "Linux"
+// Upgrade-Insecure-Requests: 1
+// User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.53 Safari/537.36
+// Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+// Sec-Fetch-Site: none
+// Sec-Fetch-Mode: navigate
+// Sec-Fetch-User: ?1
+// Sec-Fetch-Dest: document
+// Accept-Encoding: gzip, deflate, br
+// Accept-Language: en-GB,en;q=0.9
+// Cookie: sessionId=15137
+
+#define MAX_HEADER_ARG_LIST 40
+struct reqHeader{
+    string  typeOfReq;
+    string  service;
+    string  httpVersion;
+    int reqArgCnt;
+    struct requestArg headerArgList[MAX_HEADER_ARG_LIST];
+    bool valid;
+};
+
+struct reqHeader parseReqHeder(string header){
+    struct reqHeader r;
+    string temp = "";
+    int s_itr=0;
+    r.valid = true;
+
+    // type of req
+    while(header[s_itr]!=' '){
+        r.typeOfReq+=header[s_itr++];
+    }
+    s_itr++;
+    if(s_itr > header.size()){
+        r.valid = false;
+        return r;
+    }
+    // service 
+    while(header[s_itr]!=' '){
+        r.service+=header[s_itr++];
+    }
+    s_itr++;
+    if(s_itr > header.size()){
+        r.valid = false;
+        return r;
+    }
+
+    // HTTP VERSION
+    while(header[s_itr]!='\n'){
+        r.httpVersion+=header[s_itr++];
+    }
+    s_itr++;
+    if(s_itr > header.size()){
+        r.valid = false;
+        return r;
+    }
+
+    r.reqArgCnt=0;
+    string * tmp;
+    r.headerArgList[r.reqArgCnt].name="";
+    tmp = &(r.headerArgList[r.reqArgCnt].name);
+    r.headerArgList[r.reqArgCnt].value="";
+    
+    for(int i=s_itr;i<header.size();i++){
+        if(header[i]==':' && r.headerArgList[r.reqArgCnt].value==""){
+            i++;
+            if(header.size()>i){
+                r.headerArgList[r.reqArgCnt].value="";
+                tmp = &(r.headerArgList[r.reqArgCnt].value);
+            }            
+        }
+        if(header[i]=='\n'){
+            r.reqArgCnt++;
+            r.headerArgList[r.reqArgCnt].name="";
+            tmp = &(r.headerArgList[r.reqArgCnt].name);
+        }
+        else{
+            *tmp+=header[i];
+        }
+    }
+
+    print_debug(r.typeOfReq);
+    print_debug(r.httpVersion); 
+    print_debug(r.service);
+    print_debug(r.reqArgCnt);
+    print_debug(r.headerArgList[0].name);
+    print_debug(r.headerArgList[0].value);
+    print_debug(r.headerArgList[r.reqArgCnt-2].name);
+    print_debug(r.headerArgList[r.reqArgCnt-2].value);
+    return r;
+}
+
 void * workingThread (void *param){
 
     struct params * p = (struct params *) param;
@@ -346,8 +463,10 @@ void * workingThread (void *param){
     char buffer[8096];
 
     int num_byte_recvd = recv(p->client_socket,buffer,8096,0);
+
+    struct reqHeader requestHeader =  parseReqHeder(string(buffer,0,num_byte_recvd));
     string requestMsg = string(buffer,0,num_byte_recvd);
-    cout<<requestMsg ;
+    // cout<<requestMsg ;
 
     string header ;
     string data ;
@@ -363,14 +482,14 @@ void * workingThread (void *param){
     header = string("HTTP/1.1 ") + to_string(httpErrorCode) +string(" ok\r\n") + string("Cache-Control: no-cache, private\r\n") \
                 + string("Content-Type: text/html\r\n")+ string("Content-Length: ") +to_string(data.size()) + string("\r\n\r\n"); 
 
-    if(parsed.size()>=3 && parsed[0]=="GET"){
+    if(requestHeader.valid && requestHeader.typeOfReq=="GET"){
         
-        string url = parsed[1];
+        string url = requestHeader.service;
         struct stat fst;
         string requestedFile = "";
         struct serviceResponse sr;
 
-        // parse the URL    
+        // parse the URL        
         struct urlDecode ud= urlParser(url);
 
         if(ud.valid){
@@ -378,7 +497,7 @@ void * workingThread (void *param){
             sr.reqHeader = "";
 
             if(ud.numberOfArg>0){
-                sr = resolveClientArg(ud.service,ud.cg, ud.numberOfArg);
+                sr = resolverequestArg(ud.service,ud.cg, ud.numberOfArg,requestHeader);
                 requestedFile = websiteFolder +  sr.response;
             }
             else if(ud.service=="/"){
@@ -393,7 +512,7 @@ void * workingThread (void *param){
         if(stat(requestedFile.c_str(),&fst)==0 && ud.valid){
 
             httpErrorCode = 200;
-            header = string("HTTP/1.1 ") + to_string(httpErrorCode) +string(" ok\r\n") + sr.reqHeader ;
+            header = string("HTTP/1.1 ") + to_string(httpErrorCode) +string(" ok\r\n");
 
             int type =  parseContentType(requestedFile);                                               
             switch (type)
@@ -434,11 +553,16 @@ void * workingThread (void *param){
                     header = header + string("Content-Type: text/plain");
                     break;
             }
+            
+            if(sr.reqHeader !=""){
+                header+= string("\r\n") + sr.reqHeader;
+            }  
+            print_debug(header);
 
             sendData(p->client_socket,requestedFile,header);    
         }
         else{
-            data = header + data ;
+            data = header + data;
             send(p->client_socket,data.c_str(),data.size(),0);
         }
     }
@@ -459,8 +583,8 @@ int loadConfigFile(){
     if(f.good()){
         char buffer[40000];
         f.read(buffer,40000);
-        vector <string>tokens = str_tok(string(buffer),'\n');
-        
+        vector <string>tokens = str_tok(string(buffer),'\n');        
+
         for (int i=0;i<tokens.size();i++){
             if(tokens[i].find('#')==0){
                 continue;
