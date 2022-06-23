@@ -22,8 +22,18 @@
 using namespace std;
 
 
+// HTTP CODES
+#define HTTP_OK 200
+#define HTTP_SEE_OTHER 303
+#define HTTP_FILE_NOT_FOUND 404
+#define HTTP_UNAUTHORISED_ACCESS 401
+
+// MAX LIMITS
 #define MAX_WORKER_THERAD_COUNT 100
 #define MAX_IMAGE_SIZE_BYTES 10000000
+#define MAX_HEADER_ARG_LIST 40
+#define MAX_GET_ARGS 10
+#define MAX_COOKIE_COUNT 10
 
 // Content Types
 #define NONE    1 // "Error in URL"
@@ -42,10 +52,10 @@ using namespace std;
 #define Process_Based_Server  2
 
 
-#define MAX_GET_ARGS 10
 #define NUM 1
 #define CHAR 2
 
+//Debug Tools
 #define DEBUG   true
 #define print_debug(x) if(DEBUG) cout<<#x<<"\t"<<x<<endl
 
@@ -55,7 +65,7 @@ string IP;
 int PORT;
 int serverType;
 
-
+// required Structures
 struct params{
     int client_socket;
     sockaddr_in commSock;
@@ -87,21 +97,36 @@ struct requestArg{
 };
 
 struct urlDecode{
-string service;
-string ext;
-int numberOfArg;
-struct requestArg  cg[MAX_GET_ARGS];
-bool valid;
+    string service;
+    string ext;
+    int numberOfArg;
+    struct requestArg  cg[MAX_GET_ARGS];
+    bool valid;
+};
+
+struct reqHeader{
+    string  typeOfReq;
+    string  url;
+    string  httpVersion;
+    int reqArgCnt;
+    struct requestArg headerArgList[MAX_HEADER_ARG_LIST];
+    bool valid;
 };
 
 struct serviceResponse{
     string reqHeader;
     string response;
     int responseType;
+    int responseCode;
 };
 
+// Temp databse just of checking 
 map<string,string> db_table;
 
+// Session data storage
+map<string,pair<string,string> > sessionKeyTable; 
+
+// Functions
 int isNumChar(char c){
     if(48 <= c && c<=57)
         return NUM;
@@ -163,10 +188,6 @@ struct urlDecode  urlParser(string url){
 
     print_debug(ud.service);
     print_debug(ud.ext);
-    print_debug(ud.cg[0].name);
-    print_debug(ud.cg[0].value);
-    print_debug(ud.cg[1].name);
-    print_debug(ud.cg[1].value);
     print_debug(ud.numberOfArg);
     return ud;
 }
@@ -186,8 +207,6 @@ vector<string> str_tok(string str,char delimeter){
     return tokens;
 }
 
-map<string,pair<string,string> > sessionKeyTable; 
-
 unsigned long long int getHash(string str){
     unsigned long long int hash=0;
     for (int i=0;i<str.size();i++){
@@ -199,37 +218,66 @@ unsigned long long int getHash(string str){
 string getsessionKey(string user,string pass){
     string sessionKey = to_string(getHash(user)+getHash(pass)+(unsigned long long int )rand()%10000);    
     sessionKeyTable.insert({sessionKey,make_pair(user,pass)});
+
+    cout<<"----------------------------After Insertion";
+    cout<<sessionKey<<" "<<sessionKeyTable[sessionKey].first<<" "<<sessionKeyTable[sessionKey].second<<endl;
+
     return sessionKey;
 }
 
+bool removeSessionKey(string sessionKey){
+    if (sessionKeyTable.erase(sessionKey)>0)
+        return true;
+    return false;
+}
+
 string getUserForSessionKey(string sessionKey){    
+    string user="";
     map<string,pair<string,string> >::iterator it = sessionKeyTable.find(sessionKey);
     if(it!=sessionKeyTable.end()){
-        return it->second.first;
+        cout<<"----------------------------After Search";
+        cout<<sessionKey<<" "<<sessionKeyTable[sessionKey].first<<" "<<sessionKeyTable[sessionKey].second<<endl;
+
+        user=  it->second.first;
     }
-    return NULL;
+    return user;
 }
 
 
 int parseContentType(string filename){
+    
     //   ico png jpeg json js css html none
-    vector<string> tokens = str_tok(filename,'.');
+    
+    int  type ; 
 
-    if(tokens[1]=="ico")
-        return ICO;
-    else if(tokens[1]=="png")
-        return PNG;
-    else if (tokens[1]=="jpeg")
-        return JPEG;
-    else if(tokens[1]=="json")
-        return JSON;
-    else if(tokens[1]=="js")
-        return JS;
-    else if(tokens[1]=="css")
-        return CSS;
-    else if(tokens[1]=="html"){
-        return HTML;                
+    if(filename == ""){
+        type =  NONE;
     }
+    else{
+    
+        vector<string> tokens = str_tok(filename,'.');
+    
+        if(tokens.size()>1){
+            if(tokens[1]=="ico")
+                type = ICO;
+            else if(tokens[1]=="png")
+                type = PNG;
+            else if (tokens[1]=="jpeg")
+                type = JPEG;
+            else if(tokens[1]=="json")
+                type = JSON;
+            else if(tokens[1]=="js")
+                type = JS;
+            else if(tokens[1]=="css")
+                type = CSS;
+            else if(tokens[1]=="html")
+                type = HTML;          
+        }      
+        else{
+            type = NONE;
+        }
+        }
+    return type;
 }
 
 int sendData(int socket,string filename,string header){
@@ -268,8 +316,6 @@ int sendData(int socket,string filename,string header){
     return 1;
 }
 
-#define MAX_COOKIE_COUNT 10
-
 int  getCookies(struct reqHeader reqh, struct requestArg * cookieSet){    
 
     string data = "";    
@@ -279,83 +325,170 @@ int  getCookies(struct reqHeader reqh, struct requestArg * cookieSet){
             break;
         }
     }
+
     if(data == ""){
         return -1;
     }
-
+    
     string * tmp ;
     int argCount=0;
     
     cookieSet[argCount].name="";
     tmp = &(cookieSet[argCount].name);
-    
-    for(int i=0;i<data.size();i++){
-        if(data[i]==';'){
+    int i=0;
+    while((data[i]==' ')) i++;
+
+    for(;i<data.size();i++){
+        if(data[i]==';' ){
             i++;
+            while((data[i]==' ')) i++;
             argCount++;
             cookieSet[argCount].name="";
         }
         else if(data[i]=='='){
+            while((data[i]==' ')) i++;
             cookieSet[argCount].value="";
             tmp = &(cookieSet[argCount].value);
+        }
+        else if(data[i]=='\r'){
+            argCount++;
         }
         else{
             *tmp+=data[i];
         }
     }
+
     return argCount;
 }
 
 // resolve the clinet request to the service and return the appropriate response 
-struct serviceResponse resolverequestArg(string serviceName , struct requestArg * args , int argCount,struct reqHeader requestHeader){
+struct serviceResponse resolveRequest(struct urlDecode ud,struct reqHeader requestHeader){
+
     struct serviceResponse sr; 
     struct requestArg cookieSet[MAX_COOKIE_COUNT];
 
-    // check if the service exists 
-    if(serviceName == "/" && argCount ==2){
+    sr.response= "";
+    sr.reqHeader = "" ; 
+    sr.responseCode = HTTP_OK;
 
-        // check the args are as per the service 
-        if((args[0].name=="name" || serviceName == "/index") && args[1].name=="pass" ){
-            // do the service 
-            int cookieCount=0;
-            
-            if((cookieCount = getCookies(requestHeader,&(cookieSet[0]))) >0){
-                if(cookieSet[0].name=="sessionId"){
-                    // if(sessionKeyTable.find(cookieSet[0].value)){
-                    //     // perform certain process 
-                    // }
+    // check if its static asset
+    if(ud.ext == "js" || ud.ext == "ico" || ud.ext == "png" || ud.ext == "jpeg" || ud.ext == "css" || ud.ext == "jpg"){
+        sr.response = ud.service+"."+ud.ext;
+        return sr;
+    }
+    
+    // Check if logged in or not 
+    bool loggedIn = false;
+    int cookieCount=0;
+    string user = "";
+    string sessionKey = "";
+
+    cookieCount = getCookies(requestHeader,cookieSet);
+    
+    if(cookieCount >0){
+        int itr =0 ;
+        while(itr<MAX_COOKIE_COUNT){
+            if(cookieSet[itr].name=="sessionId"){
+                sessionKey  = cookieSet[itr].value;
+                user = getUserForSessionKey(sessionKey);
+                if(user == ""){
+                    loggedIn = false;
+                    break;
+                }  
+                else{
+                    loggedIn = true;
+                    break;
                 }
             }
+            itr++;
+        }
+    }
 
-            if(db_table.size()>0 && (db_table[args[0].value]==args[1].value)){
-                sr.response =  "/dashboard.html";
-                sr.reqHeader = "Set-Cookie: sessionId="+getsessionKey(args[0].value,args[1].value) ; 
-                sr.responseType = HTML;
+    if(loggedIn){
+        if(ud.service== "/" || ud.service=="/index" || ud.service =="/register" || ud.service == "/dashboard"){
+            sr.response = "/dashboard.html";
+        }
+        else if(ud.service == "/logout"){
+            removeSessionKey(sessionKey);
+            sr.response = "";
+            sr.reqHeader = "Set-Cookie: sessionId="+getsessionKey(ud.cg[0].value,ud.cg[1].value) \
+                            +string("\r\n") +string("Location: /index.html");
+            sr.responseCode = HTTP_SEE_OTHER;
+        }
+        else{
+            sr.responseCode = HTTP_FILE_NOT_FOUND;
+        }
+        return sr;
+    }
+    else{
+        //default
+        if(ud.service == "/" || ud.service == "/index"){
+            sr.response = "/index.html";
+        }
+        // login
+        else if(ud.service == "/login" ){
+
+            if(ud.numberOfArg > 0){
+            
+                // check the args are as per the service 
+                if(ud.cg[0].name=="name" && ud.cg[1].name=="pass" ){
+
+                    // do the service 
+                    if(db_table.size()>0 ){
+                        print_debug(ud.cg[0].value);
+                        print_debug(ud.cg[1].value);
+                        map<string,string>::iterator itr = db_table.find(ud.cg[0].value);
+                        if(db_table.end()!=itr){
+                            if(itr->second == ud.cg[1].value){
+                                sr.response =  "";
+                                sr.reqHeader = "Set-Cookie: sessionId="+getsessionKey(ud.cg[0].value,ud.cg[1].value) \
+                                                +string("\r\n") + string("Location: /dashboard.html") ;
+                                sr.responseCode = HTTP_SEE_OTHER;
+
+                            }
+                        }
+                        else{
+                            sr.responseCode = HTTP_UNAUTHORISED_ACCESS;
+                        }
+                    }
+                    else{
+                        sr.responseCode = HTTP_UNAUTHORISED_ACCESS;
+                    }
+                }
+                else{
+                    sr.responseCode = HTTP_FILE_NOT_FOUND;
+                }
             }
             else{
-                sr.response =  "/unauthoreised.html";
-                sr.reqHeader = " " ; 
-                sr.responseType = HTML;
+                sr.response = "/login.html";    
             }
         }
-        else{
-            sr.responseType = NONE;
-        }
-    }
-    else if(serviceName == "/register" && argCount == 2){
+        else if(ud.service == "/register"){
 
-        // check the args are as per the service 
-        if(args[0].name=="name" && args[1].name=="pass"){
-                db_table[args[0].value] = args[1].value;
-                sr.response =  "/dashboard.html";
-                sr.reqHeader = "Set-Cookie: sessionId="+getsessionKey(args[0].value,args[1].value) ; 
-                sr.responseType = HTML;
+            if(ud.numberOfArg > 0){
+                // check the args are as per the service 
+                if(ud.cg[0].name=="name" && ud.cg[1].name=="pass"){
+                        db_table[ud.cg[0].value] = ud.cg[1].value;
+                        sr.response =  "";
+                        sr.reqHeader = string("Location: /login.html") ;
+                        sr.responseCode = HTTP_SEE_OTHER;
+                }
+                else{
+                    sr.responseCode = HTTP_FILE_NOT_FOUND;
+                }
+            }
+            else{
+                sr.response = "/register.html";
+            }
+        }
+        else if(ud.service == "/dashboard"){
+            sr.responseCode = HTTP_UNAUTHORISED_ACCESS;
         }
         else{
-            sr.responseType = NONE;
+            sr.response = ud.service + "." + ud.ext;
         }
     }
-    // return the response 
+        // return the response 
     return sr;
 }
 
@@ -376,17 +509,8 @@ struct serviceResponse resolverequestArg(string serviceName , struct requestArg 
 // Accept-Language: en-GB,en;q=0.9
 // Cookie: sessionId=15137
 
-#define MAX_HEADER_ARG_LIST 40
-struct reqHeader{
-    string  typeOfReq;
-    string  service;
-    string  httpVersion;
-    int reqArgCnt;
-    struct requestArg headerArgList[MAX_HEADER_ARG_LIST];
-    bool valid;
-};
-
 struct reqHeader parseReqHeder(string header){
+    
     struct reqHeader r;
     string temp = "";
     int s_itr=0;
@@ -401,9 +525,9 @@ struct reqHeader parseReqHeder(string header){
         r.valid = false;
         return r;
     }
-    // service 
+    // url 
     while(header[s_itr]!=' '){
-        r.service+=header[s_itr++];
+        r.url+=header[s_itr++];
     }
     s_itr++;
     if(s_itr > header.size()){
@@ -446,11 +570,8 @@ struct reqHeader parseReqHeder(string header){
     }
 
     print_debug(r.typeOfReq);
-    print_debug(r.httpVersion); 
-    print_debug(r.service);
+    print_debug(r.url);
     print_debug(r.reqArgCnt);
-    print_debug(r.headerArgList[0].name);
-    print_debug(r.headerArgList[0].value);
     print_debug(r.headerArgList[r.reqArgCnt-2].name);
     print_debug(r.headerArgList[r.reqArgCnt-2].value);
     return r;
@@ -458,114 +579,123 @@ struct reqHeader parseReqHeder(string header){
 
 void * workingThread (void *param){
 
-    struct params * p = (struct params *) param;
-    
+    struct params * p = (struct params *) param;    
     char buffer[8096];
+    string header = "" ;
+    string data ="";
 
     int num_byte_recvd = recv(p->client_socket,buffer,8096,0);
+    print_debug("------------------------------");
 
     struct reqHeader requestHeader =  parseReqHeder(string(buffer,0,num_byte_recvd));
-    string requestMsg = string(buffer,0,num_byte_recvd);
-    // cout<<requestMsg ;
-
-    string header ;
-    string data ;
     
-    // get the file name to transfer 
-    istringstream issRequestMsg(requestMsg);
-
-    vector<string> parsed ((istream_iterator<string>(issRequestMsg)),istream_iterator<string>()) ;
-
-    //default header, data and error code
-    int httpErrorCode = 404;
-    data = string("<head></head> <body> <h1>File Not Found </h1></body> ");
-    header = string("HTTP/1.1 ") + to_string(httpErrorCode) +string(" ok\r\n") + string("Cache-Control: no-cache, private\r\n") \
-                + string("Content-Type: text/html\r\n")+ string("Content-Length: ") +to_string(data.size()) + string("\r\n\r\n"); 
-
+    //default error code
+    int httpResponseCode = HTTP_FILE_NOT_FOUND;
+    
     if(requestHeader.valid && requestHeader.typeOfReq=="GET"){
         
-        string url = requestHeader.service;
+        string url = requestHeader.url;
         struct stat fst;
         string requestedFile = "";
         struct serviceResponse sr;
 
         // parse the URL        
-        struct urlDecode ud= urlParser(url);
+        struct urlDecode url_decoded= urlParser(url);
 
-        if(ud.valid){
-            
+        // reslove the service
+        if(url_decoded.valid){
             sr.reqHeader = "";
-
-            if(ud.numberOfArg>0){
-                sr = resolverequestArg(ud.service,ud.cg, ud.numberOfArg,requestHeader);
+            sr = resolveRequest(url_decoded,requestHeader);
+            if(sr.response != "")
                 requestedFile = websiteFolder +  sr.response;
-            }
-            else if(ud.service=="/"){
-                requestedFile = websiteFolder + "/index.html";
-            }
-            else {
-                requestedFile = websiteFolder+ud.service+"."+ud.ext;
-            }
+            else
+                requestedFile = "";
+
+            httpResponseCode = sr.responseCode;
+        }
+
+        print_debug(requestedFile);
+ 
+        // check for redirect
+        if(httpResponseCode == HTTP_SEE_OTHER){
+            requestedFile = "";
+        }
+
+        // check if authorized access
+        else if(httpResponseCode == HTTP_UNAUTHORISED_ACCESS && requestedFile==""){
+            requestedFile = "Error401.html";
         }
 
         // check if content is available
-        if(stat(requestedFile.c_str(),&fst)==0 && ud.valid){
-
-            httpErrorCode = 200;
-            header = string("HTTP/1.1 ") + to_string(httpErrorCode) +string(" ok\r\n");
-
-            int type =  parseContentType(requestedFile);                                               
-            switch (type)
-            {
-                case HTML:
-                    header = header + string("Content-Type: text/html");
-                    break;
-                                
-                case ICO:
-                    header = header + string("Content-Type: image/vnd.microsoft.icon");
-                    break;
-                
-                
-                case PNG:
-                    header = header + string("Content-Type: image/png");
-                    break;
-                
-                
-                case CSS:
-                    header = header + string("Content-Type: text/css");
-                    break;
-                
-                
-                case JPEG:
-                    header = header + string("Content-Type: image/jpeg");
-                    break;
-                
-                
-                case JSON:
-                    header = header + string("Content-Type: text/json");
-                    break;
-                
-                case JS:
-                    header = header + string("Content-Type: text/javescript");
-                    break;
-                
-                default:
-                    header = header + string("Content-Type: text/plain");
-                    break;
-            }
+        else if(stat(requestedFile.c_str(),&fst)!=0 || httpResponseCode == HTTP_FILE_NOT_FOUND){
+            httpResponseCode =  HTTP_FILE_NOT_FOUND;
+            requestedFile = "Error404.html";
+        }
+        // set the header as per the response 
+        header = string("HTTP/1.1 ") + to_string(httpResponseCode) +string(" ok\r\n");
+        int type =  parseContentType(requestedFile);    
+                                           
+        switch (type)
+        {
+            case HTML:
+                header = header + string("Content-Type: text/html");
+                break;
+                            
+            case ICO:
+                header = header + string("Content-Type: image/vnd.microsoft.icon");
+                break;
             
-            if(sr.reqHeader !=""){
-                header+= string("\r\n") + sr.reqHeader;
-            }  
-            print_debug(header);
+            
+            case PNG:
+                header = header + string("Content-Type: image/png");
+                break;
+            
+            
+            case CSS:
+                header = header + string("Content-Type: text/css");
+                break;
+            
+            
+            case JPEG:
+                header = header + string("Content-Type: image/jpeg");
+                break;
+            
+            
+            case JSON:
+                header = header + string("Content-Type: text/json");
+                break;
+            
+            case JS:
+                header = header + string("Content-Type: text/javescript");
+                break;
+            
+            case NONE:
+                header = header + string("Content-Type: text/plain");
+                break;
 
-            sendData(p->client_socket,requestedFile,header);    
+            default:
+                header = header + string("Content-Type: text/plain");
+                break;
+            
+        }
+        
+        // if any extra header requirement then added
+        if(sr.reqHeader !=""){
+            header+= string("\r\n") + sr.reqHeader + string("\r\n");
+        }
+
+        print_debug(header);
+            
+        // send data to clinet
+        if(httpResponseCode == HTTP_SEE_OTHER){
+            header += string("Content-Length: 0") + string("\r\n\r\n");
+            send(p->client_socket,header.c_str(),header.size(),0);
         }
         else{
-            data = header + data;
-            send(p->client_socket,data.c_str(),data.size(),0);
+            sendData(p->client_socket,requestedFile,header);    
         }
     }
+
     close(p->client_socket);
     return 0;   
 }
