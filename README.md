@@ -1,4 +1,4 @@
-# JARVIS-MINI-SERVER IN C++
+# BABY SERVER IN C++
 ## Bare minimum http server created from scratch in c++. 
 - Supports dynamic websites.
 - To use change the `webServer.config` file as per your need and run.
