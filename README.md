@@ -7,6 +7,6 @@
 
 ## Further addition : 
 ### 1. Session management -- `DONE`
-### 2. POST method Implementation -- `To be done`
+### 2. POST method Implementation -- `DONE`
 ### 3. Database Connectivity Support -- `In Progress`
 

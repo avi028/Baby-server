@@ -104,14 +104,22 @@ struct urlDecode{
     bool valid;
 };
 
+#define form_urlencoded "application/x-www-form-urlencoded\r"
+#define multipart_form_data  "multipart/form-data\r"
+
 struct reqHeader{
     string  typeOfReq;
     string  url;
     string  httpVersion;
     int reqArgCnt;
+    string inputType;
+    string multipartBoundary ;
+    struct requestArg inputArgs[MAX_GET_ARGS];
+    int inputArgsCount;
     struct requestArg headerArgList[MAX_HEADER_ARG_LIST];
     bool valid;
 };
+
 
 struct serviceResponse{
     string reqHeader;
@@ -319,7 +327,7 @@ int sendData(int socket,string filename,string header){
 int  getCookies(struct reqHeader reqh, struct requestArg * cookieSet){    
 
     string data = "";    
-    for (int i=0;i<reqh.reqArgCnt;i++){
+    for (int i=0;i<MAX_HEADER_ARG_LIST;i++){
         if(reqh.headerArgList[i].name == "Cookie"){
             data = reqh.headerArgList[i].value;
             break;
@@ -394,7 +402,7 @@ struct serviceResponse resolveRequest(struct urlDecode ud,struct reqHeader reque
                 if(user == ""){
                     loggedIn = false;
                     break;
-                }  
+                }   
                 else{
                     loggedIn = true;
                     break;
@@ -492,6 +500,30 @@ struct serviceResponse resolveRequest(struct urlDecode ud,struct reqHeader reque
     return sr;
 }
 
+// string(buffer,0,num_byte_recvd)	POST /register.html HTTP/1.1
+// Host: 127.0.0.1:8080
+// Connection: keep-alive
+// Content-Length: 18
+// Cache-Control: max-age=0
+// sec-ch-ua: "Chromium";v="103", ".Not/A)Brand";v="99"
+// sec-ch-ua-mobile: ?0
+// sec-ch-ua-platform: "Linux"
+// Upgrade-Insecure-Requests: 1
+// Origin: http://127.0.0.1:8080
+// Content-Type: application/x-www-form-urlencoded
+// User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.53 Safari/537.36
+// Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+// Sec-Fetch-Site: same-origin
+// Sec-Fetch-Mode: navigate
+// Sec-Fetch-User: ?1
+// Sec-Fetch-Dest: document
+// Referer: http://127.0.0.1:8080/register.html
+// Accept-Encoding: gzip, deflate, br
+// Accept-Language: en-GB,en;q=0.9
+
+// name=john&pass=doe
+
+
 // GET / HTTP/1.1
 // Host: 127.0.0.1:8080
 // Connection: keep-alive
@@ -509,7 +541,7 @@ struct serviceResponse resolveRequest(struct urlDecode ud,struct reqHeader reque
 // Accept-Language: en-GB,en;q=0.9
 // Cookie: sessionId=15137
 
-struct reqHeader parseReqHeder(string header){
+struct reqHeader parseReqHeader(string header){
     
     struct reqHeader r;
     string temp = "";
@@ -545,37 +577,93 @@ struct reqHeader parseReqHeder(string header){
         return r;
     }
 
-    r.reqArgCnt=0;
-    string * tmp;
-    r.headerArgList[r.reqArgCnt].name="";
-    tmp = &(r.headerArgList[r.reqArgCnt].name);
-    r.headerArgList[r.reqArgCnt].value="";
-    
-    for(int i=s_itr;i<header.size();i++){
-        if(header[i]==':' && r.headerArgList[r.reqArgCnt].value==""){
+    if(r.typeOfReq=="GET"){
+
+        r.reqArgCnt=0;
+        string * tmp;
+        r.headerArgList[r.reqArgCnt].name="";
+        tmp = &(r.headerArgList[r.reqArgCnt].name);
+        r.headerArgList[r.reqArgCnt].value="";
+        
+        for(int i=s_itr;i<header.size();i++){
+            if(header[i]==':' && r.headerArgList[r.reqArgCnt].value==""){
+                i++;
+                if(header.size()>i){
+                    r.headerArgList[r.reqArgCnt].value="";
+                    tmp = &(r.headerArgList[r.reqArgCnt].value);
+                }            
+            }
+            if(header[i]=='\n'){
+                r.reqArgCnt++;
+                r.headerArgList[r.reqArgCnt].name="";
+                tmp = &(r.headerArgList[r.reqArgCnt].name);
+            }
+            else{
+                *tmp+=header[i];
+            }
+        }
+
+        print_debug(r.typeOfReq);
+        print_debug(r.url);
+        print_debug(r.reqArgCnt);
+        print_debug(r.headerArgList[r.reqArgCnt-2].name);
+        print_debug(r.headerArgList[r.reqArgCnt-2].value);
+
+    }
+    else if (r.typeOfReq == "POST")
+    {
+        r.reqArgCnt=0;
+        string * tmp;
+        r.headerArgList[r.reqArgCnt].name="";
+        tmp = &(r.headerArgList[r.reqArgCnt].name);
+        r.headerArgList[r.reqArgCnt].value="";
+        
+        int i=s_itr;
+        for( ;i<header.size();i++){
+            if(header[i]==':' && r.headerArgList[r.reqArgCnt].value==""){
+                i++;
+                if(header.size()>i){
+                    r.headerArgList[r.reqArgCnt].value="";
+                    tmp = &(r.headerArgList[r.reqArgCnt].value);
+                }            
+            }
+            else if(header[i]=='\n' && header[i+1]=='\r'){
+                i++; //\r
+                i++; //\n
+                i++;
+                break;                
+            }
+            else if(header[i]=='\n'){
+                if(r.headerArgList[r.reqArgCnt].name == "Content-Type"){
+                    r.inputType = r.headerArgList[r.reqArgCnt].value;
+                }
+                
+                r.reqArgCnt++;
+                r.headerArgList[r.reqArgCnt].name="";
+                tmp = &(r.headerArgList[r.reqArgCnt].name);
+            }
+            else{
+                *tmp+=header[i];
+            }
+        }
+        r.inputArgsCount=0;
+        while(header.size()>i){
+            r.inputArgsCount+=1;
+            tmp = &(r.inputArgs[r.inputArgsCount-1].name);
+            while(header[i]!='='){
+                *tmp+=header[i++];
+            }
             i++;
-            if(header.size()>i){
-                r.headerArgList[r.reqArgCnt].value="";
-                tmp = &(r.headerArgList[r.reqArgCnt].value);
-            }            
-        }
-        if(header[i]=='\n'){
-            r.reqArgCnt++;
-            r.headerArgList[r.reqArgCnt].name="";
-            tmp = &(r.headerArgList[r.reqArgCnt].name);
-        }
-        else{
-            *tmp+=header[i];
+            tmp = &(r.inputArgs[r.inputArgsCount-1].value);
+            while(header[i]!='\r' && header[i]!='\n' && header[i]!='&' && header.size()>i){
+                *tmp+=header[i++];
+            }
+            i++;
         }
     }
-
-    print_debug(r.typeOfReq);
-    print_debug(r.url);
-    print_debug(r.reqArgCnt);
-    print_debug(r.headerArgList[r.reqArgCnt-2].name);
-    print_debug(r.headerArgList[r.reqArgCnt-2].value);
     return r;
 }
+
 
 void * workingThread (void *param){
 
@@ -585,14 +673,16 @@ void * workingThread (void *param){
     string data ="";
 
     int num_byte_recvd = recv(p->client_socket,buffer,8096,0);
+    
     print_debug("------------------------------");
 
-    struct reqHeader requestHeader =  parseReqHeder(string(buffer,0,num_byte_recvd));
+    print_debug(string(buffer,0,num_byte_recvd));
+    struct reqHeader requestHeader =  parseReqHeader(string(buffer,0,num_byte_recvd));
     
     //default error code
-    int httpResponseCode = HTTP_FILE_NOT_FOUND;
+        int httpResponseCode = HTTP_FILE_NOT_FOUND;
     
-    if(requestHeader.valid && requestHeader.typeOfReq=="GET"){
+    if(requestHeader.valid){
         
         string url = requestHeader.url;
         struct stat fst;
@@ -601,6 +691,16 @@ void * workingThread (void *param){
 
         // parse the URL        
         struct urlDecode url_decoded= urlParser(url);
+
+        if(requestHeader.typeOfReq=="POST" && requestHeader.inputType==form_urlencoded){
+            url_decoded.numberOfArg = requestHeader.inputArgsCount;
+            for (size_t i = 0; i < requestHeader.inputArgsCount; i++)
+            {
+                url_decoded.cg[i].name = requestHeader.inputArgs[i].name;
+                url_decoded.cg[i].value = requestHeader.inputArgs[i].value;
+            }
+            // requestHeader.typeOfReq="GET";
+        }
 
         // reslove the service
         if(url_decoded.valid){
