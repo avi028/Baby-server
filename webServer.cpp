@@ -245,7 +245,6 @@ string getUserForSessionKey(string sessionKey){
     if(it!=sessionKeyTable.end()){
         cout<<"----------------------------After Search";
         cout<<sessionKey<<" "<<sessionKeyTable[sessionKey].first<<" "<<sessionKeyTable[sessionKey].second<<endl;
-
         user=  it->second.first;
     }
     return user;
@@ -838,13 +837,7 @@ int loadConfigFile(){
     return 1;
 }
 
-int main(int argc,char** argcv){
-
-    // random initialization for hashMap
-    srand(time(NULL));
-
-    // lOAD Config data from file
-    loadConfigFile();
+int setupInitConnection(){
 
     // create a socket
     int listening_sock = socket(AF_INET,SOCK_STREAM,0);
@@ -866,21 +859,26 @@ int main(int argc,char** argcv){
 
     // adding reusable tag to the port
     const int enable = 1;
-    if (setsockopt(listening_sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
+    if (setsockopt(listening_sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){
         cerr<<"setsockopt(SO_REUSEADDR) failed";    
+        return -1;
+    }
 
     // bind a socket 
     if(bind(listening_sock,(sockaddr*)&host_addr,sizeof(sockaddr_in))==-1){
         cerr<<"Bind unsuccessful : Unable to bond to given socket"<<endl;
+        return -1;
     }
 
-    // listen on the socket
     listen(listening_sock,SOMAXCONN);
+    return listening_sock;
+}
 
+
+void loadBalancer(int listening_sock,pthread_t * wt_pth){
+    
+    // threads for processes
     pthread_t  * wt_pth = (pthread_t*) malloc(sizeof(int));
-
-    int wt_itr =0;
-
     while(1){
         struct params * commPrm = (struct params *)malloc(sizeof(struct params));
         commPrm->commlen = sizeof(sockaddr_in);
@@ -893,8 +891,7 @@ int main(int argc,char** argcv){
             //*******************creating  thread for each request *****************
             
             if(serverType == Thread_Based_Server){
-                if(pthread_create(&wt_pth[wt_itr],0,workingThread,(void*)commPrm)==0){
-                    wt_itr++;
+                if(pthread_create(&wt_pth[0],0,workingThread,(void*)commPrm)==0){
                     continue;
                 }
                 else{
@@ -923,10 +920,23 @@ int main(int argc,char** argcv){
             cerr<<"Connection not established";
         }
     } 
-   
-    for (int i;i<wt_itr;i++)   
-        pthread_join(wt_pth[i],0);
+}
 
+int main(int argc,char** argcv){
+
+    // random initialization for hashMap
+    srand(time(NULL));
+
+    // lOAD Config data from file
+    loadConfigFile();
+
+    // listen on the socket
+    int listening_sock = setupInitConnection();
+
+    if(listening_sock!=-1){
+        loadBalancer(listening_sock,wt_pth)
+    }
+   
     // close listening socket
     close (listening_sock);
     return 0;
