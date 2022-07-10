@@ -1,143 +1,14 @@
-#include <iostream>
-#include <stdio.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <sys/sendfile.h>
-#include <netdb.h>
-#include <string.h> 
-#include <arpa/inet.h>
-#include <string>
-#include <iterator>
-#include <sstream>
-#include <streambuf>
-#include <vector>
-#include <fstream>
-#include <map>
-#include <stdlib.h>
-#include <time.h>
+#include "includes.h"
+#include "def.h"
+#include "structDef.h"
+
 using namespace std;
-
-
-// HTTP CODES
-#define HTTP_OK 200
-#define HTTP_SEE_OTHER 303
-#define HTTP_FILE_NOT_FOUND 404
-#define HTTP_UNAUTHORISED_ACCESS 401
-
-// MAX LIMITS
-#define MAX_WORKER_THERAD_COUNT 100
-#define MAX_IMAGE_SIZE_BYTES 10000000
-#define MAX_HEADER_ARG_LIST 40
-#define MAX_GET_ARGS 10
-#define MAX_COOKIE_COUNT 10
-
-// Content Types
-#define NONE    1 // "Error in URL"
-#define ICO  2 // "ico"
-#define JS  3   // "js"
-#define PNG 4   // "png"
-#define JPEG    5 // "jpeg"
-#define JSON    6//"json"
-#define CSS     7//"css"
-#define HTML    8//"html"
-#define HTML_GET 9
-#define DEFAULT  10// "/"
-
-// Server Types 
-#define Thread_Based_Server  1
-#define Process_Based_Server  2
-
-
-#define NUM 1
-#define CHAR 2
-
-//Debug Tools
-#define DEBUG   true
-#define print_debug(x) if(DEBUG) cout<<#x<<"\t"<<x<<endl
 
 // Global variables 
 string websiteFolder;
 string IP;
 int PORT;
 int serverType;
-
-// required Structures
-struct params{
-    int client_socket;
-    sockaddr_in commSock;
-    socklen_t commlen;
-};
-
-/********************************************
-
-    /index.html ?   name=john   &   pass=doe
-
-_name
-_ext
-_numberOfArg
-_arg1Name
-_arg1Value
-_arg2Name
-_arg2Value
-_arg3Name
-_arg3Value
-....
-...
-..
-.
-*********************************************/
-
-
-/* Structure to store the arguments received in the client request
-*/
-struct requestArg{
-    string name;
-    string value;
-};
-
-/* URL structure to store the different sections of URL 
-*/
-struct urlDecode{
-    string service;
-    string ext;
-    int numberOfArg;
-    struct requestArg  cg[MAX_GET_ARGS];
-    bool valid;
-};
-
-
-/* Type to content received in the POST method 
-*/
-#define form_urlencoded "application/x-www-form-urlencoded\r"
-#define multipart_form_data  "multipart/form-data\r"
-
-/* Request header structure to decode and store the different parts of the Header section of the client Request 
- */
-struct reqHeader{
-    string  typeOfReq;
-    string  url;
-    string  httpVersion;
-    int reqArgCnt;
-    string inputType;
-    string multipartBoundary ;
-    struct requestArg inputArgs[MAX_GET_ARGS];
-    int inputArgsCount;
-    struct requestArg headerArgList[MAX_HEADER_ARG_LIST];
-    bool valid;
-};
-
-/* To Response to the client Request below mentioned things are required 
- */
-struct serviceResponse{
-    string reqHeader;
-    string response;
-    int responseType;
-    int responseCode;
-};
 
 // Temp volatile databse just of checking 
 map<string,string> db_table;
