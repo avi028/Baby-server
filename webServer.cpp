@@ -91,11 +91,16 @@ _arg3Value
 .
 *********************************************/
 
+
+/* Structure to store the arguments received in the client request
+*/
 struct requestArg{
     string name;
     string value;
 };
 
+/* URL structure to store the different sections of URL 
+*/
 struct urlDecode{
     string service;
     string ext;
@@ -104,9 +109,14 @@ struct urlDecode{
     bool valid;
 };
 
+
+/* Type to content received in the POST method 
+*/
 #define form_urlencoded "application/x-www-form-urlencoded\r"
 #define multipart_form_data  "multipart/form-data\r"
 
+/* Request header structure to decode and store the different parts of the Header section of the client Request 
+ */
 struct reqHeader{
     string  typeOfReq;
     string  url;
@@ -120,7 +130,8 @@ struct reqHeader{
     bool valid;
 };
 
-
+/* To Response to the client Request below mentioned things are required 
+ */
 struct serviceResponse{
     string reqHeader;
     string response;
@@ -128,13 +139,16 @@ struct serviceResponse{
     int responseCode;
 };
 
-// Temp databse just of checking 
+// Temp volatile databse just of checking 
 map<string,string> db_table;
 
 // Session data storage
 map<string,pair<string,string> > sessionKeyTable; 
 
-// Functions
+/* ----------------------------------------------Utility Fuctions---------------------------------------------- */
+
+/*  Check If the given character is numer or character or none
+*/
 int isNumChar(char c){
     if(48 <= c && c<=57)
         return NUM;
@@ -143,6 +157,42 @@ int isNumChar(char c){
     return 0;
 }
 
+/*  Takes inout as atring and splits it as per the given delimeter .
+    Input : str string , char delimeter 
+    Ouput : vector  <string>  
+ */
+vector<string> str_tok(string str,char delimeter){
+    vector<string> tokens;
+    int start =0 ;
+    string copy = str;
+    int end = copy.find(delimeter);
+    while(end !=-1){
+        tokens.push_back(copy.substr(start,end-start));
+        start = end+1;
+        end = copy.find(delimeter,start);
+    }   
+    tokens.push_back(copy.substr(start,end-start));
+    return tokens;
+}
+
+/* Simple hash function to create a numeric hash of a given string 
+    Input : string to br hashed
+    Output : unsigned int
+ */
+
+unsigned long long int getHash(string str){
+    unsigned long long int hash=0;
+    for (int i=0;i<str.size();i++){
+        hash = hash*10+(int)(str[i])%10;
+    }
+    return hash;
+}
+
+
+/* Decodes the URL .
+    Input : URL string 
+    Ouput : urlDecode structure
+ */
 struct urlDecode  urlParser(string url){
     
     struct urlDecode ud;
@@ -201,28 +251,10 @@ struct urlDecode  urlParser(string url){
 }
 
 
-vector<string> str_tok(string str,char delimeter){
-    vector<string> tokens;
-    int start =0 ;
-    string copy = str;
-    int end = copy.find(delimeter);
-    while(end !=-1){
-        tokens.push_back(copy.substr(start,end-start));
-        start = end+1;
-        end = copy.find(delimeter,start);
-    }   
-    tokens.push_back(copy.substr(start,end-start));
-    return tokens;
-}
-
-unsigned long long int getHash(string str){
-    unsigned long long int hash=0;
-    for (int i=0;i<str.size();i++){
-        hash = hash*10+(int)(str[i])%10;
-    }
-    return hash;
-}
-
+/* Returns the session key from the table 
+    input : user string , key string 
+    output : sessionKey string 
+ */
 string getsessionKey(string user,string pass){
     string sessionKey = to_string(getHash(user)+getHash(pass)+(unsigned long long int )rand()%10000);    
     sessionKeyTable.insert({sessionKey,make_pair(user,pass)});
@@ -233,25 +265,38 @@ string getsessionKey(string user,string pass){
     return sessionKey;
 }
 
+/* Removes the session key from the table 
+    Input : sessionKey string
+ */
 bool removeSessionKey(string sessionKey){
     if (sessionKeyTable.erase(sessionKey)>0)
         return true;
     return false;
 }
 
+
+/* Finds the user in the table using the session key 
+    Input : sessionKey string
+    Output : username string
+ */
 string getUserForSessionKey(string sessionKey){    
     string user="";
     map<string,pair<string,string> >::iterator it = sessionKeyTable.find(sessionKey);
     if(it!=sessionKeyTable.end()){
-        cout<<"----------------------------After Search";
-        cout<<sessionKey<<" "<<sessionKeyTable[sessionKey].first<<" "<<sessionKeyTable[sessionKey].second<<endl;
-
+        // print_debug("----------------------------After Search");
+        // print_debug(sessionKey);
+        // print_debug(sessionKeyTable[sessionKey].first);
+        // print_debug(sessionKeyTable[sessionKey].second);
         user=  it->second.first;
     }
     return user;
 }
 
 
+/* Get the content type from the given filename
+    Input : filename string
+    Output : contentType int
+ */
 int parseContentType(string filename){
     
     //   ico png jpeg json js css html none
@@ -288,42 +333,11 @@ int parseContentType(string filename){
     return type;
 }
 
-int sendData(int socket,string filename,string header){
 
-    int fd = open(filename.c_str(),O_RDONLY);
-    if(fd == -1){
-        cerr<<filename<<"file not found\n";
-        close(fd);
-        return 0;
-    }
-
-    struct stat fst;
-    fstat(fd,&fst);
-
-    int fsize = fst.st_size;
-    int bsize = fst.st_blksize;
-
-    // cerr<<fsize<<endl;
-    // cerr<<bsize<<endl;   
-    
-    // add the content size to header
-    header = header +string("\r\nContent-Length: ")+ to_string(fsize) + string("\r\n\r\n");
-    
-    // send HEADER  to the client
-    send(socket,header.c_str(),header.size(),0);
-
-    // send content 
-    while (fsize > bsize){
-        sendfile(socket,fd,NULL,bsize);
-        fsize-=bsize; 
-    }
-    sendfile(socket,fd,NULL,fsize);
-    
-    // close the file descriptor
-    close(fd);
-    return 1;
-}
-
+/* Parses the resuest header from the client and pushes the cookies in the cookie set
+    Input : Request-header struct reqHeader , cookie-set struct rewuestArg
+    Output : status int 
+ */
 int  getCookies(struct reqHeader reqh, struct requestArg * cookieSet){    
 
     string data = "";    
@@ -350,8 +364,10 @@ int  getCookies(struct reqHeader reqh, struct requestArg * cookieSet){
         if(data[i]==';' ){
             i++;
             while((data[i]==' ')) i++;
+            i--;
             argCount++;
             cookieSet[argCount].name="";
+            tmp = &(cookieSet[argCount].name);
         }
         else if(data[i]=='='){
             while((data[i]==' ')) i++;
@@ -369,178 +385,10 @@ int  getCookies(struct reqHeader reqh, struct requestArg * cookieSet){
     return argCount;
 }
 
-// resolve the clinet request to the service and return the appropriate response 
-struct serviceResponse resolveRequest(struct urlDecode ud,struct reqHeader requestHeader){
-
-    struct serviceResponse sr; 
-    struct requestArg cookieSet[MAX_COOKIE_COUNT];
-
-    sr.response= "";
-    sr.reqHeader = "" ; 
-    sr.responseCode = HTTP_OK;
-
-    // check if its static asset
-    if(ud.ext == "js" || ud.ext == "ico" || ud.ext == "png" || ud.ext == "jpeg" || ud.ext == "css" || ud.ext == "jpg"){
-        sr.response = ud.service+"."+ud.ext;
-        return sr;
-    }
-    
-    // Check if logged in or not 
-    bool loggedIn = false;
-    int cookieCount=0;
-    string user = "";
-    string sessionKey = "";
-
-    cookieCount = getCookies(requestHeader,cookieSet);
-    
-    if(cookieCount >0){
-        int itr =0 ;
-        while(itr<MAX_COOKIE_COUNT){
-            if(cookieSet[itr].name=="sessionId"){
-                sessionKey  = cookieSet[itr].value;
-                user = getUserForSessionKey(sessionKey);
-                if(user == ""){
-                    loggedIn = false;
-                    break;
-                }   
-                else{
-                    loggedIn = true;
-                    break;
-                }
-            }
-            itr++;
-        }
-    }
-
-    if(loggedIn){
-        if(ud.service== "/" || ud.service=="/index" || ud.service =="/register" || ud.service == "/dashboard"){
-            sr.response = "/dashboard.html";
-        }
-        else if(ud.service == "/logout"){
-            removeSessionKey(sessionKey);
-            sr.response = "";
-            sr.reqHeader = "Set-Cookie: sessionId="+getsessionKey(ud.cg[0].value,ud.cg[1].value) \
-                            +string("\r\n") +string("Location: /index.html");
-            sr.responseCode = HTTP_SEE_OTHER;
-        }
-        else{
-            sr.responseCode = HTTP_FILE_NOT_FOUND;
-        }
-        return sr;
-    }
-    else{
-        //default
-        if(ud.service == "/" || ud.service == "/index"){
-            sr.response = "/index.html";
-        }
-        // login
-        else if(ud.service == "/login" ){
-
-            if(ud.numberOfArg > 0){
-            
-                // check the args are as per the service 
-                if(ud.cg[0].name=="name" && ud.cg[1].name=="pass" ){
-
-                    // do the service 
-                    if(db_table.size()>0 ){
-                        print_debug(ud.cg[0].value);
-                        print_debug(ud.cg[1].value);
-                        map<string,string>::iterator itr = db_table.find(ud.cg[0].value);
-                        if(db_table.end()!=itr){
-                            if(itr->second == ud.cg[1].value){
-                                sr.response =  "";
-                                sr.reqHeader = "Set-Cookie: sessionId="+getsessionKey(ud.cg[0].value,ud.cg[1].value) \
-                                                +string("\r\n") + string("Location: /dashboard.html") ;
-                                sr.responseCode = HTTP_SEE_OTHER;
-
-                            }
-                        }
-                        else{
-                            sr.responseCode = HTTP_UNAUTHORISED_ACCESS;
-                        }
-                    }
-                    else{
-                        sr.responseCode = HTTP_UNAUTHORISED_ACCESS;
-                    }
-                }
-                else{
-                    sr.responseCode = HTTP_FILE_NOT_FOUND;
-                }
-            }
-            else{
-                sr.response = "/login.html";    
-            }
-        }
-        else if(ud.service == "/register"){
-
-            if(ud.numberOfArg > 0){
-                // check the args are as per the service 
-                if(ud.cg[0].name=="name" && ud.cg[1].name=="pass"){
-                        db_table[ud.cg[0].value] = ud.cg[1].value;
-                        sr.response =  "";
-                        sr.reqHeader = string("Location: /login.html") ;
-                        sr.responseCode = HTTP_SEE_OTHER;
-                }
-                else{
-                    sr.responseCode = HTTP_FILE_NOT_FOUND;
-                }
-            }
-            else{
-                sr.response = "/register.html";
-            }
-        }
-        else if(ud.service == "/dashboard"){
-            sr.responseCode = HTTP_UNAUTHORISED_ACCESS;
-        }
-        else{
-            sr.response = ud.service + "." + ud.ext;
-        }
-    }
-        // return the response 
-    return sr;
-}
-
-// string(buffer,0,num_byte_recvd)	POST /register.html HTTP/1.1
-// Host: 127.0.0.1:8080
-// Connection: keep-alive
-// Content-Length: 18
-// Cache-Control: max-age=0
-// sec-ch-ua: "Chromium";v="103", ".Not/A)Brand";v="99"
-// sec-ch-ua-mobile: ?0
-// sec-ch-ua-platform: "Linux"
-// Upgrade-Insecure-Requests: 1
-// Origin: http://127.0.0.1:8080
-// Content-Type: application/x-www-form-urlencoded
-// User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.53 Safari/537.36
-// Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
-// Sec-Fetch-Site: same-origin
-// Sec-Fetch-Mode: navigate
-// Sec-Fetch-User: ?1
-// Sec-Fetch-Dest: document
-// Referer: http://127.0.0.1:8080/register.html
-// Accept-Encoding: gzip, deflate, br
-// Accept-Language: en-GB,en;q=0.9
-
-// name=john&pass=doe
-
-
-// GET / HTTP/1.1
-// Host: 127.0.0.1:8080
-// Connection: keep-alive
-// sec-ch-ua: "Chromium";v="103", ".Not/A)Brand";v="99"
-// sec-ch-ua-mobile: ?0
-// sec-ch-ua-platform: "Linux"
-// Upgrade-Insecure-Requests: 1
-// User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.53 Safari/537.36
-// Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
-// Sec-Fetch-Site: none
-// Sec-Fetch-Mode: navigate
-// Sec-Fetch-User: ?1
-// Sec-Fetch-Dest: document
-// Accept-Encoding: gzip, deflate, br
-// Accept-Language: en-GB,en;q=0.9
-// Cookie: sessionId=15137
-
+/* parses the client header , decodes it and fills the request header structure
+    Input : clinet-request-header-data string
+    Output : Request-header-decoded struct reqHeader
+ */
 struct reqHeader parseReqHeader(string header){
     
     struct reqHeader r;
@@ -664,7 +512,252 @@ struct reqHeader parseReqHeader(string header){
     return r;
 }
 
+/* Loads the configuration from the config file in the main folder 
+*/
+int loadConfigFile(){
+    
+    // default set 
+    websiteFolder="testWebsite";
+    IP="127.0.0.1";
+    PORT=8080;
+    serverType=Thread_Based_Server;
 
+    // if config file is available set the vairables as per the file
+    ifstream f("webServer.config");
+    if(f.good()){
+        char buffer[40000];
+        f.read(buffer,40000);
+        vector <string>tokens = str_tok(string(buffer),'\n');        
+
+        for (int i=0;i<tokens.size();i++){
+            if(tokens[i].find('#')==0){
+                continue;
+            }
+            else{
+                vector<string> subtokens = str_tok(tokens[i],':');
+                if(subtokens[0]=="WebSiteFolderName")
+                    websiteFolder = subtokens[1];
+                else if(subtokens[0]=="IP")
+                    IP=subtokens[1];
+                else if(subtokens[0]=="PORT")
+                    PORT=atoi(subtokens[1].c_str());
+                else if(subtokens[0]=="Server_Type")
+                    serverType=atoi(subtokens[1].c_str());
+            }
+        }
+    }
+    else{
+        return 0;
+    }
+    return 1;
+}
+
+/* ------------------------------------------------MAIN Functions ------------------------------------------------- */
+
+/* Sends data to the client
+    Input : client-socket int , file-to-be-sent string , Response-header string
+    Output : status int
+ */
+int sendData(int socket,string filename,string header){
+
+    int fd = open(filename.c_str(),O_RDONLY);
+    if(fd == -1){
+        cerr<<filename<<"file not found\n";
+        close(fd);
+        return 0;
+    }
+
+    struct stat fst;
+    fstat(fd,&fst);
+
+    int fsize = fst.st_size;
+    int bsize = fst.st_blksize;
+
+    // cerr<<fsize<<endl;
+    // cerr<<bsize<<endl;   
+    
+    // add the content size to header
+    header = header +string("\r\nContent-Length: ")+ to_string(fsize) + string("\r\n\r\n");
+    
+    // send HEADER  to the client
+    send(socket,header.c_str(),header.size(),0);
+
+    // send content 
+    while (fsize > bsize){
+        sendfile(socket,fd,NULL,bsize);
+        fsize-=bsize; 
+    }
+    sendfile(socket,fd,NULL,fsize);
+    
+    // close the file descriptor
+    close(fd);
+    return 1;
+}
+
+/*  Resolve the clinet request to the service and return the appropriate response 
+    Here you can edit the code as per your website If you want a dynamic website else no need 
+
+    Input : client-decoded-url structc urlDecode , client-Request-Header struct reqHeader 
+    Output : Response-to-client struct serviceResponse
+ */
+struct serviceResponse resolveRequest(struct urlDecode ud,struct reqHeader requestHeader){
+
+    // response structure to sent to the client
+    struct serviceResponse sr; 
+
+    // to collect the cookies in the request header
+    struct requestArg cookieSet[MAX_COOKIE_COUNT];
+
+
+    // default initialzation of the  response structure
+    sr.response= "";
+    sr.reqHeader = "" ; 
+    sr.responseCode = HTTP_OK;
+
+    // check if its static asset
+    if(ud.ext == "js" || ud.ext == "ico" || ud.ext == "png" || ud.ext == "jpeg" || ud.ext == "css" || ud.ext == "jpg"){
+        sr.response = ud.service+"."+ud.ext;
+        return sr;
+    }
+    
+    /* Test website is a simple 
+        website to test session management 
+        with basic login and a dashboard to 
+        display your detail
+
+        Below Code shows how the various page requests are being handled
+    */
+
+
+    // Check if logged in or not 
+    bool loggedIn = false;
+    
+    int cookieCount=0;
+    string user = "";
+    string sessionKey = "";
+
+
+    cookieCount = getCookies(requestHeader,cookieSet);
+    
+    /* For TestWebiste we set the session as "sessionId" and here we check for that cookie 
+        in the cookies we received from the browser 
+    */
+
+    if(cookieCount >0){
+        int itr =0 ;
+        while(itr<MAX_COOKIE_COUNT){
+            if(cookieSet[itr].name=="sessionId"){
+                sessionKey  = cookieSet[itr].value;
+                user = getUserForSessionKey(sessionKey);
+                if(user == ""){
+                    loggedIn = false;
+                    break;
+                }   
+                else{
+                    loggedIn = true;
+                    break;
+                }
+            }
+            itr++;
+        }
+    }
+
+    if(loggedIn){
+        if(ud.service== "/" || ud.service=="/index" || ud.service =="/register" || ud.service == "/dashboard"){
+            sr.response = "/dashboard.html";
+        }
+        else if(ud.service == "/logout"){
+            removeSessionKey(sessionKey);
+            sr.response = "";
+            sr.reqHeader = "Set-Cookie: sessionId="+getsessionKey(ud.cg[0].value,ud.cg[1].value) \
+                            +string("\r\n") +string("Location: /index.html");
+            sr.responseCode = HTTP_SEE_OTHER;
+        }
+        else{
+            sr.responseCode = HTTP_FILE_NOT_FOUND;
+        }
+        return sr;
+    }
+    else{
+        //default
+        if(ud.service == "/" || ud.service == "/index"){
+            sr.response = "/index.html";
+        }
+
+        // login page request
+        else if(ud.service == "/login" ){
+
+            if(ud.numberOfArg > 0){
+            
+                // check the args are as per the service 
+                if(ud.cg[0].name=="name" && ud.cg[1].name=="pass" ){
+
+                    // do the service 
+                    if(db_table.size()>0 ){
+                        print_debug(ud.cg[0].value);
+                        print_debug(ud.cg[1].value);
+                        map<string,string>::iterator itr = db_table.find(ud.cg[0].value);
+                        if(db_table.end()!=itr){
+                            if(itr->second == ud.cg[1].value){
+                                sr.response =  "";
+                                sr.reqHeader = "Set-Cookie: sessionId="+getsessionKey(ud.cg[0].value,ud.cg[1].value) \
+                                                +string("\r\n") + string("Location: /dashboard.html") ;
+                                sr.responseCode = HTTP_SEE_OTHER;
+
+                            }
+                        }
+                        else{
+                            sr.responseCode = HTTP_UNAUTHORISED_ACCESS;
+                        }
+                    }
+                    else{
+                        sr.responseCode = HTTP_UNAUTHORISED_ACCESS;
+                    }
+                }
+                else{
+                    sr.responseCode = HTTP_FILE_NOT_FOUND;
+                }
+            }
+            else{
+                sr.response = "/login.html";    
+            }
+        }
+        // register page request
+        else if(ud.service == "/register"){
+
+            if(ud.numberOfArg > 0){
+                // check the args are as per the service 
+                if(ud.cg[0].name=="name" && ud.cg[1].name=="pass"){
+                        db_table[ud.cg[0].value] = ud.cg[1].value;
+                        sr.response =  "";
+                        sr.reqHeader = string("Location: /login.html") ;
+                        sr.responseCode = HTTP_SEE_OTHER;
+                }
+                else{
+                    sr.responseCode = HTTP_FILE_NOT_FOUND;
+                }
+            }
+            else{
+                sr.response = "/register.html";
+            }
+        }
+        // dashboard page request
+        else if(ud.service == "/dashboard"){
+            sr.responseCode = HTTP_UNAUTHORISED_ACCESS;
+        }
+        // If any other page request 
+        else{
+            sr.response = ud.service + "." + ud.ext;
+        }
+    }
+    
+    // return the response 
+    return sr;
+}
+
+
+/* Thread handling each of the client requests
+ */
 void * workingThread (void *param){
 
     struct params * p = (struct params *) param;    
@@ -775,8 +868,7 @@ void * workingThread (void *param){
 
             default:
                 header = header + string("Content-Type: text/plain");
-                break;
-            
+                break;            
         }
         
         // if any extra header requirement then added
@@ -795,56 +887,16 @@ void * workingThread (void *param){
             sendData(p->client_socket,requestedFile,header);    
         }
     }
-
     close(p->client_socket);
     return 0;   
 }
 
-int loadConfigFile(){
-    
-    // default set 
-    websiteFolder="testWebsite";
-    IP="127.0.0.1";
-    PORT=8080;
-    serverType=Thread_Based_Server;
-
-    // if config file is available set the vairables as per the file
-    ifstream f("webServer.config");
-    if(f.good()){
-        char buffer[40000];
-        f.read(buffer,40000);
-        vector <string>tokens = str_tok(string(buffer),'\n');        
-
-        for (int i=0;i<tokens.size();i++){
-            if(tokens[i].find('#')==0){
-                continue;
-            }
-            else{
-                vector<string> subtokens = str_tok(tokens[i],':');
-                if(subtokens[0]=="WebSiteFolderName")
-                    websiteFolder = subtokens[1];
-                else if(subtokens[0]=="IP")
-                    IP=subtokens[1];
-                else if(subtokens[0]=="PORT")
-                    PORT=atoi(subtokens[1].c_str());
-                else if(subtokens[0]=="Server_Type")
-                    serverType=atoi(subtokens[1].c_str());
-            }
-        }
-    }
-    else{
-        return 0;
-    }
-    return 1;
-}
-
-int main(int argc,char** argcv){
-
-    // random initialization for hashMap
-    srand(time(NULL));
-
-    // lOAD Config data from file
-    loadConfigFile();
+/* Sets up the initial connection
+    1. Creates the listening socket
+    2. binds it with the IP address
+    3. Puts the socket to listening  mode.
+ */
+int setupInitConnection(){
 
     // create a socket
     int listening_sock = socket(AF_INET,SOCK_STREAM,0);
@@ -866,21 +918,29 @@ int main(int argc,char** argcv){
 
     // adding reusable tag to the port
     const int enable = 1;
-    if (setsockopt(listening_sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
+    if (setsockopt(listening_sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){
         cerr<<"setsockopt(SO_REUSEADDR) failed";    
+        return -1;
+    }
 
     // bind a socket 
     if(bind(listening_sock,(sockaddr*)&host_addr,sizeof(sockaddr_in))==-1){
         cerr<<"Bind unsuccessful : Unable to bond to given socket"<<endl;
+        return -1;
     }
 
-    // listen on the socket
     listen(listening_sock,SOMAXCONN);
+    return listening_sock;
+}
 
+/* Takes the requests from teh clients first hand 
+    1. accepts the connection 
+    2. creates a new thread for the request to be handled
+*/
+void loadBalancer(int listening_sock){
+    
+    // threads for processes
     pthread_t  * wt_pth = (pthread_t*) malloc(sizeof(int));
-
-    int wt_itr =0;
-
     while(1){
         struct params * commPrm = (struct params *)malloc(sizeof(struct params));
         commPrm->commlen = sizeof(sockaddr_in);
@@ -893,8 +953,7 @@ int main(int argc,char** argcv){
             //*******************creating  thread for each request *****************
             
             if(serverType == Thread_Based_Server){
-                if(pthread_create(&wt_pth[wt_itr],0,workingThread,(void*)commPrm)==0){
-                    wt_itr++;
+                if(pthread_create(&wt_pth[0],0,workingThread,(void*)commPrm)==0){
                     continue;
                 }
                 else{
@@ -923,9 +982,22 @@ int main(int argc,char** argcv){
             cerr<<"Connection not established";
         }
     } 
-   
-    for (int i;i<wt_itr;i++)   
-        pthread_join(wt_pth[i],0);
+}
+
+/* Main Code */
+int main(int argc,char** argcv){
+
+    // random initialization for hashMap
+    srand(time(NULL));
+
+    // lOAD Config data from file
+    loadConfigFile();
+
+    // listen on the socket
+    int listening_sock = setupInitConnection();
+
+    // load balancer call
+    loadBalancer(listening_sock);
 
     // close listening socket
     close (listening_sock);
