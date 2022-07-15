@@ -4,16 +4,22 @@
         <meta charset="utf-8" />
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <title>Register</title>
-        <meta name="viewport" content="width=device-width ,initial-scale=1">        
+        <meta name="viewport" content="width=device-width ,initial-scale=1">
+        <link rel="stylesheet" href="normalize.css">
+        <link rel="stylesheet" href="main.css">
+        <script src="main.js" type="text/javascript" charset="utf-8"></script>
     </head>
     <body>
-        <div>
+        <div class="title">
             <h1>Registration</h1>
         </div>
-        <form action="/register.html" method="post">
-            <label>Name</label><input type="text" placeholder="name" name="name"><br>
-            <label>password</label><input type="password" placeholder="password" name="pass"><br>
-            <input type ="submit"></input>
-        </form>
+        <div class="card">
+            <form action="/register.html" method="post">
+                <label>Name</label><input type="text" placeholder="name" name="name" id="name"><br>
+                <label>Password</label><input type="password" placeholder="password" name="pass" id="pass"><br>
+                <label>Confirm Password</label><input type="password" placeholder="confirm password" id="cpass"><br>
+                <input type ="submit" onclick="return val()"></input>
+            </form>    
+        </div>
 </body>
 </html>
