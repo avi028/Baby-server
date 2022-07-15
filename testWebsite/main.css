@@ -1,0 +1,45 @@
+body {
+    margin: 0;
+    font-family: cursive;
+    background-color: aliceblue;
+  }
+  
+
+.card{
+    display: block;
+    margin: 10px auto;
+    width: 400px;
+    border: 0px solid;
+    box-shadow: 1px 1px 6px slategrey;
+    border-radius: 10px;
+    padding: 11px;
+    text-align: center;
+    /* vertical-align: text-bottom; */
+    background-color: mintcream;
+}
+
+.card img{
+    width:400px;
+}
+
+.card input{
+    border: 1px solid burlywood;
+    margin: 20px 5px;
+    padding: 10px;
+    border-radius: 25px;
+    text-align: center;
+
+}
+
+
+.card input[type="submit" i] {
+    cursor:pointer;
+
+}
+
+
+.title{
+    text-align: center;
+    margin: 65px;
+    font-size: 30px;
+}
