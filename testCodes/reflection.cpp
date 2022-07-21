@@ -1,93 +1,69 @@
-/* 
-    provide reflection of variables 
-
-    class reflectionTable :
-
-    Methods :
-        Constructor - initializez an empty table
-
-        inset : arg 1 string variable name, arg 2 string value / defualt ""
-        update : N
-
-
-    class Reflection :
-
-    Methods :
-
-    constructor
-
-
- */
-
+#include <iostream>
 #include <string>
 
-#define REFLECT(x) template<class R> void reflect(R& r) { r x; }
+#define REFLECT(x) template<typename R> void reflect(R& r) { r x; }
+#define NULL_str ""
 
-struct Employee {
-    std::string emp_id;
-    int salary;
+struct user {
+    std::string name1;
+    std::string name2;
+    std::string name3;
+    std::string name4;
+    std::string name5;
+    std::string dateOfRelease ;
+
     REFLECT(
-        ("Emp_id", emp_id)
-        ("Salary", salary)
+        ("dateOfRelease",dateOfRelease)
+        ("name3",name3)
+        ("name4",name4)
+        ("name2",name2)
+        ("name1",name1)
+        ("name5",name5)
     )
 };
 
-/**
- * @file reflection.cpp
- * @author your name (you@domain.com)
- * @brief 
- * @version 0.1
- * @date 2022-07-15
- * 
- * @copyright Copyright (c) 2022
- * 
- */
-
-#include <iostream>
-class Demo {
-    std::ostream& output;
-    bool flag;
+class callOut {
+    
+    std::string attribute;
+    std::string value;
 
     public:
 
-    Demo(std::ostream& output) : output(output)
-    {}
-
-    /**
-     * @brief 
-     * 
-     * @tparam T 
-     * @param myobj 
-     * @return decltype(myobj.reflect(*this), void()) 
-     */
-    template<class T> auto write(T& myobj) -> decltype(myobj.reflect(*this), void()) {
-        output << "{";
-        flag = false;
-        myobj.reflect(*this);
-        output << "}\n";
-    }
-    void write(int val) {
-        output << val;
-    }
-    void write(std::string& val) {
-        output << '"' << val << '"';
+    callOut(){
+        attribute = NULL_str;
+        value = NULL_str;
     }
 
-    template<class T> Demo& operator()(const char* emp_id, T& myfield) {
-        if (flag) {
-            output << ",";
+    template<typename T>
+    std::string getAttribute(T& myobj,std::string attribute) {
+        this->attribute = attribute;
+        value = NULL_str;
+        myobj.reflect(*this);      
+        return value;
+    }
+
+    template<typename T> 
+    callOut& operator()(const char* tag, T& myfield) {
+        if(attribute != NULL_str && tag == attribute){
+            this->value= myfield;
         }
-        flag = true;
-        output << emp_id << ":";
-        write(myfield);
         return *this;
     }
 };
 
 int main() {
-    Demo myObj(std::cout);
-    Employee emp1 = { "2324354", 90000 };
-    myObj.write(emp1);
-    Employee emp2 = { "235566", 50000 };
-    myObj.write(emp2);
+    callOut obj;
+    user u;
+    
+    u.name1 = "John Wick 1";
+    u.name2 = "John Wick 2";
+    u.name3 = "John Wick 3";
+    u.name4 = "John Wick 4";
+    u.name5 = "John Wick 5";
+    u.dateOfRelease = "01-01-2001";
+
+    std::string attribute = "name4";
+    std::string value = obj.getAttribute(u,attribute);
+    if(value != NULL_str)    
+        std::cout<<value<<std::endl;
 }
