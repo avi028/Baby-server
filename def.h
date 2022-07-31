@@ -43,4 +43,15 @@
     #define form_urlencoded "application/x-www-form-urlencoded\r"
     #define multipart_form_data  "multipart/form-data\r"
 
+    // reflection 
+    #define REFLECT(x) template<typename R> void reflect(R& r) { r x; }
+    #define NULL_str ""
+
+
+    /**
+     * @brief To check the reflection module working
+     * 
+     */
+    // #define REFLECTION_CHECK
+
 #endif

@@ -1,64 +1,13 @@
 #include "includes.h"
 #include "def.h"
+#include "utils.h"
 #include "structDef.h"
+#include "user_def.h"
+#include "externs.h"
+#include "globals.h"
+#include "sessions.h"
 
 using namespace std;
-
-// Global variables 
-string websiteFolder;
-string IP;
-int PORT;
-int serverType;
-
-// Temp volatile databse just of checking 
-map<string,string> db_table;
-
-// Session data storage
-map<string,pair<string,string> > sessionKeyTable; 
-
-/* ----------------------------------------------Utility Fuctions---------------------------------------------- */
-
-/*  Check If the given character is numer or character or none
-*/
-int isNumChar(char c){
-    if(48 <= c && c<=57)
-        return NUM;
-    if((65 <= c && c<=90) || (97<=c && c<=122))
-        return CHAR;
-    return 0;
-}
-
-/*  Takes inout as atring and splits it as per the given delimeter .
-    Input : str string , char delimeter 
-    Ouput : vector  <string>  
- */
-vector<string> str_tok(string str,char delimeter){
-    vector<string> tokens;
-    int start =0 ;
-    string copy = str;
-    int end = copy.find(delimeter);
-    while(end !=-1){
-        tokens.push_back(copy.substr(start,end-start));
-        start = end+1;
-        end = copy.find(delimeter,start);
-    }   
-    tokens.push_back(copy.substr(start,end-start));
-    return tokens;
-}
-
-/* Simple hash function to create a numeric hash of a given string 
-    Input : string to br hashed
-    Output : unsigned int
- */
-
-unsigned long long int getHash(string str){
-    unsigned long long int hash=0;
-    for (int i=0;i<str.size();i++){
-        hash = hash*10+(int)(str[i])%10;
-    }
-    return hash;
-}
-
 
 /* Decodes the URL .
     Input : URL string 
@@ -120,49 +69,6 @@ struct urlDecode  urlParser(string url){
     print_debug(ud.numberOfArg);
     return ud;
 }
-
-
-/* Returns the session key from the table 
-    input : user string , key string 
-    output : sessionKey string 
- */
-string getsessionKey(string user,string pass){
-    string sessionKey = to_string(getHash(user)+getHash(pass)+(unsigned long long int )rand()%10000);    
-    sessionKeyTable.insert({sessionKey,make_pair(user,pass)});
-
-    cout<<"----------------------------After Insertion";
-    cout<<sessionKey<<" "<<sessionKeyTable[sessionKey].first<<" "<<sessionKeyTable[sessionKey].second<<endl;
-
-    return sessionKey;
-}
-
-/* Removes the session key from the table 
-    Input : sessionKey string
- */
-bool removeSessionKey(string sessionKey){
-    if (sessionKeyTable.erase(sessionKey)>0)
-        return true;
-    return false;
-}
-
-
-/* Finds the user in the table using the session key 
-    Input : sessionKey string
-    Output : username string
- */
-string getUserForSessionKey(string sessionKey){    
-    string user="";
-    map<string,pair<string,string> >::iterator it = sessionKeyTable.find(sessionKey);
-    if(it!=sessionKeyTable.end()){
-        // print_debug("----------------------------After Search");
-        // print_debug(sessionKey);
-        // print_debug(sessionKeyTable[sessionKey].first);
-        // print_debug(sessionKeyTable[sessionKey].second);
-        user=  it->second.first;
-    }
-    return user;
-}
-
 
 /* Get the content type from the given filename
     Input : filename string
@@ -422,6 +328,17 @@ int loadConfigFile(){
     }
     return 1;
 }
+template<typename T>
+int parseTemplate(std::string htmlTemplate, T& dataStruct){
+    ifstream f(htmlTemplate);
+    if(f.good()){
+        std::string htmlTemplateData = std::string(std::istreambuf_iterator<char>(f),std::istreambuf_iterator<char>());
+        print_debug(htmlTemplateData);
+        // std::vector<std::string> str_set = str_tok()
+    }
+
+    return -1;
+}
 
 /* ------------------------------------------------MAIN Functions ------------------------------------------------- */
 
@@ -627,7 +544,8 @@ struct serviceResponse resolveRequest(struct urlDecode ud,struct reqHeader reque
 }
 
 
-/* Thread handling each of the client requests
+/* 
+ * Thread handling each of the client requests
  */
 void * workingThread (void *param){
 
