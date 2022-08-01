@@ -10,8 +10,8 @@
  * 
  */
 
-std::vector< pair<std::string,int> > getAttributes(vector<std::string> lineset){
-    std::vector< pair<std::string,int> > att_set;
+std::vector< std::pair<std::string,int> > getAttributes(std::vector<std::string> lineset){
+    std::vector< std::pair<std::string,int> > att_set;
 
     return att_set;
 }

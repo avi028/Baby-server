@@ -5,20 +5,28 @@
 #<tab>actions
 
 
-all: reflection webServer utils sessions
-	g++ webServer.o reflection.o utils.o sessions.o -o server -lpthread
+all: reflection.o webServer.o utils.o sessions.o parsers.o
+	g++ webServer.o reflection.o utils.o sessions.o parsers.o -o server -lpthread
 
-webServer: def.h user_def.h includes.h structDef.h reflection.h utils.h sessions.h globals.h externs.h
-	g++ -c webServer.cpp
+webServer.o: webServer.cpp def.h user_def.h includes.h structDef.h reflection.h utils.h sessions.h globals.h externs.h
+	g++ -c webServer.cpp -o $@
 
-reflection: def.h user_def.h includes.h structDef.h reflection.h
-	g++ -c reflection.cpp
+reflection.o:reflection.cpp def.h user_def.h includes.h structDef.h reflection.h
+	g++ -c reflection.cpp -o $@
 
-utils: includes.h utils.h def.h
-	g++ -c utils.cpp
+utils.o:utils.cpp includes.h utils.h def.h utils.cpp
+	g++ -c utils.cpp -o $@
 
-sessions: includes.h def.h sessions.h externs.h
-	g++ -c sessions.cpp
+sessions.o:sessions.cpp includes.h def.h sessions.h externs.h sessions.cpp
+	g++ -c sessions.cpp -o $@
+
+parsers.o:parsers.cpp includes.h def.h parsers.h externs.h
+	g++ -c parsers.cpp -o $@
+
+.PHONY: clean all
 
 clean: 
-	rm -f *.o server
+	@rm -f *.o *.out
+
+run:
+	@./server

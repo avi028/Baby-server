@@ -36,7 +36,7 @@
 
     //Debug Tools
     #define DEBUG   true
-    #define print_debug(x) if(DEBUG) cout<<#x<<"\t"<<x<<endl
+    #define print_debug(x) if(DEBUG) std::cout<<#x<<"\t"<<x<<std::endl
 
     /* Type to content received in the POST method 
     */

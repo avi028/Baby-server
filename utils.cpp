@@ -1,5 +1,7 @@
 #include "utils.h"
 #include "def.h"
+#include "structDef.h"
+#include "externs.h"
 
 /* ----------------------------------------------Utility Fuctions---------------------------------------------- */
 
@@ -43,3 +45,96 @@ unsigned long long int getHash(std::string str){
     }
     return hash;
 }
+
+/* Parses the resuest header from the client and pushes the cookies in the cookie set
+    Input : Request-header struct reqHeader , cookie-set struct rewuestArg
+    Output : status int 
+ */
+int  getCookies(struct reqHeader reqh, struct requestArg * cookieSet){    
+
+    std::string data = "";    
+    for (int i=0;i<MAX_HEADER_ARG_LIST;i++){
+        if(reqh.headerArgList[i].name == "Cookie"){
+            data = reqh.headerArgList[i].value;
+            break;
+        }
+    }
+
+    if(data == ""){
+        return -1;
+    }
+    
+    std::string * tmp ;
+    int argCount=0;
+    
+    cookieSet[argCount].name="";
+    tmp = &(cookieSet[argCount].name);
+    int i=0;
+    while((data[i]==' ')) i++;
+
+    for(;i<data.size();i++){
+        if(data[i]==';' ){
+            i++;
+            while((data[i]==' ')) i++;
+            i--;
+            argCount++;
+            cookieSet[argCount].name="";
+            tmp = &(cookieSet[argCount].name);
+        }
+        else if(data[i]=='='){
+            while((data[i]==' ')) i++;
+            cookieSet[argCount].value="";
+            tmp = &(cookieSet[argCount].value);
+        }
+        else if(data[i]=='\r'){
+            argCount++;
+        }
+        else{
+            *tmp+=data[i];
+        }
+    }
+
+    return argCount;
+}
+
+
+/* Loads the configuration from the config file in the main folder 
+*/
+int loadConfigFile(){
+    
+    // default set 
+    websiteFolder="testWebsite";
+    IP="127.0.0.1";
+    PORT=8080;
+    serverType=Thread_Based_Server;
+
+    // if config file is available set the vairables as per the file
+    std::ifstream f("webServer.config");
+    if(f.good()){
+        char buffer[40000];
+        f.read(buffer,40000);
+        std::vector <std::string>tokens = str_tok(std::string(buffer),'\n');        
+
+        for (int i=0;i<tokens.size();i++){
+            if(tokens[i].find('#')==0){
+                continue;
+            }
+            else{
+                std::vector<std::string> subtokens = str_tok(tokens[i],':');
+                if(subtokens[0]=="WebSiteFolderName")
+                    websiteFolder = subtokens[1];
+                else if(subtokens[0]=="IP")
+                    IP=subtokens[1];
+                else if(subtokens[0]=="PORT")
+                    PORT=atoi(subtokens[1].c_str());
+                else if(subtokens[0]=="Server_Type")
+                    serverType=atoi(subtokens[1].c_str());
+            }
+        }
+    }
+    else{
+        return 0;
+    }
+    return 1;
+}
+
