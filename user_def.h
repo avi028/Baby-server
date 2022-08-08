@@ -26,7 +26,7 @@ struct dummy_user {
 
 #endif
 
-struct UserDetials{
+struct UserDetails{
     std::string userName;
     REFLECT(
         ("userName",userName)

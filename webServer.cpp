@@ -91,7 +91,6 @@ struct serviceResponse resolveRequest(struct urlDecode ud,struct reqHeader reque
     bool loggedIn = false;
     
     int cookieCount=0;
-    string user = "";
     string sessionKey = "";
 
 
@@ -101,18 +100,25 @@ struct serviceResponse resolveRequest(struct urlDecode ud,struct reqHeader reque
         in the cookies we received from the browser 
     */
 
+    struct UserDetails user;
     if(cookieCount >0){
         int itr =0 ;
+        string uname;
         while(itr<MAX_COOKIE_COUNT){
             if(cookieSet[itr].name=="sessionId"){
                 sessionKey  = cookieSet[itr].value;
-                user = getUserForSessionKey(sessionKey);
-                if(user == ""){
+                uname = getUserForSessionKey(sessionKey);
+                if(uname == ""){
                     loggedIn = false;
                     break;
                 }   
+                /**
+                 * @brief If logged in fill up the suer details in the suer details struct
+                 * 
+                 */
                 else{
                     loggedIn = true;
+                    user.userName = uname;
                     break;
                 }
             }
@@ -122,6 +128,12 @@ struct serviceResponse resolveRequest(struct urlDecode ud,struct reqHeader reque
 
     if(loggedIn){
         if(ud.service== "/" || ud.service=="/index" || ud.service =="/register" || ud.service == "/dashboard"){
+                /**
+                 * personalised response for dashboard                 * 
+
+                 * @brief make response -> dynamic renderd file location .
+                 *  response = call dynamicHTMLrender('requested FIle',user) 
+                 */
             sr.response = "/dashboard.html";
         }
         else if(ud.service == "/logout"){

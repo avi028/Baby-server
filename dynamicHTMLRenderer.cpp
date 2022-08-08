@@ -1,25 +1,42 @@
 #include "includes.h"
 #include "externs.h"
+#include "utils.h"
 #include "user_def.h"
 #include "reflection.h"
 #include "dynamicHTMLRenderer.h"
 
-
+#define vp_str std::vector< std::pair<std::string,int> >
 /**
- * @brief get the attributes and their location in the read vector of strings
+ * @brief Set the Attributes in the file
  * 
+ * @param data 
+ * @return std::string 
  */
+std::string setAttributes(std::string data){
+    std::string rData = NULL_str;
+    int dataSize=data.size();
+    std::string attr=NULL_str;
 
-std::vector< std::pair<std::string,int> > getAttributes(std::vector<std::string> lineset){
-    std::vector< std::pair<std::string,int> > att_set;
-
-    return att_set;
+    for (size_t i = 0; i < dataSize; i++)
+    {
+        if(data[i]=='{' && (i+1)<dataSize && data[i+1]=='%'){
+            while(data[i++]==' ' && i<dataSize);
+            while(data[i]!=' ' && data[i]!='%' && i<dataSize){
+                attr+=data[i++];
+            }
+            if(i<dataSize && data[i]=='%' && (i+1)<dataSize && data[i+1]=='}'){
+                // attribute is valid use for  info
+            }
+        }
+    }
+    
+    return rData;
 }
 
 
 /**
  * @brief 
- * @param User-Object-Instance contains details of the user
+ * @param Object_Instance contains details of the user
  * @param htmlFileName the file which can contian attributes
  * 
  * @returns filename of the new changed file
@@ -35,9 +52,15 @@ std::string dyHTMLRender (T& objInstance , std::string htmlfile){
     struct stat folderst;
     if(stat(tmpFolder,&folderst)==-1){
         mkdir(tmpFolder,0700);
+
     }
-
-    // call get Attributes 
-
+    std::ifstream f(htmlfile);
+    if(f.good()){
+        std::string data  ((std::istreambuf_iterator<char>(f)) ,(std::istreambuf_iterator<char>())) ;    
+        data = setAttributes(data);
+        // call get Attributes 
+    }
+    else
+        return NULL_str;
 
 }
