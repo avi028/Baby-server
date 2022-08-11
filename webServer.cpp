@@ -1,26 +1,36 @@
+#include <csignal>
+#include <stdlib.h>
 #include "includes.h"
+
 #include "def.h"
 #include "utils.h"
 #include "structDef.h"
-#include "user_def.h"
 #include "externs.h"
 #include "globals.h"
-#include "sessions.h"
 #include "parsers.h"
 
-using namespace std;
+/**
+ * @brief definend by user
+ * 
+ * @param ud 
+ * @param requestHeader 
+ * @return struct serviceResponse 
+ */
+
+struct serviceResponse resolveRequest(struct urlDecode ud,struct reqHeader requestHeader);
+
 
 /* ------------------------------------------------MAIN Functions ------------------------------------------------- */
 
 /* Sends data to the client
-    Input : client-socket int , file-to-be-sent string , Response-header string
+    Input : client-socket int , file-to-be-sent std::string  , Response-header std::string 
     Output : status int
  */
-int sendData(int socket,string filename,string header){
+int sendData(int socket,std::string  filename,std::string  header){
 
     int fd = open(filename.c_str(),O_RDONLY);
     if(fd == -1){
-        cerr<<filename<<"file not found\n";
+        std::cerr<<filename<<"file not found\n";
         close(fd);
         return 0;
     }
@@ -35,7 +45,7 @@ int sendData(int socket,string filename,string header){
     // cerr<<bsize<<endl;   
     
     // add the content size to header
-    header = header +string("\r\nContent-Length: ")+ to_string(fsize) + string("\r\n\r\n");
+    header = header +std::string ("\r\nContent-Length: ")+std:: to_string(fsize) + std::string ("\r\n\r\n");
     
     // send HEADER  to the client
     send(socket,header.c_str(),header.size(),0);
@@ -52,205 +62,31 @@ int sendData(int socket,string filename,string header){
     return 1;
 }
 
-/*  Resolve the clinet request to the service and return the appropriate response 
-    Here you can edit the code as per your website If you want a dynamic website else no need 
-
-    Input : client-decoded-url structc urlDecode , client-Request-Header struct reqHeader 
-    Output : Response-to-client struct serviceResponse
- */
-struct serviceResponse resolveRequest(struct urlDecode ud,struct reqHeader requestHeader){
-
-    // response structure to sent to the client
-    struct serviceResponse sr; 
-
-    // to collect the cookies in the request header
-    struct requestArg cookieSet[MAX_COOKIE_COUNT];
-
-
-    // default initialzation of the  response structure
-    sr.response= "";
-    sr.reqHeader = "" ; 
-    sr.responseCode = HTTP_OK;
-
-    // check if its static asset
-    if(ud.ext == "js" || ud.ext == "ico" || ud.ext == "png" || ud.ext == "jpeg" || ud.ext == "css" || ud.ext == "jpg"){
-        sr.response = ud.service+"."+ud.ext;
-        return sr;
-    }
-    
-    /* Test website is a simple 
-        website to test session management 
-        with basic login and a dashboard to 
-        display your detail
-
-        Below Code shows how the various page requests are being handled
-    */
-
-
-    // Check if logged in or not 
-    bool loggedIn = false;
-    
-    int cookieCount=0;
-    string sessionKey = "";
-
-
-    cookieCount = getCookies(requestHeader,cookieSet);
-    
-    /* For TestWebiste we set the session as "sessionId" and here we check for that cookie 
-        in the cookies we received from the browser 
-    */
-
-    struct UserDetails user;
-    if(cookieCount >0){
-        int itr =0 ;
-        string uname;
-        while(itr<MAX_COOKIE_COUNT){
-            if(cookieSet[itr].name=="sessionId"){
-                sessionKey  = cookieSet[itr].value;
-                uname = getUserForSessionKey(sessionKey);
-                if(uname == ""){
-                    loggedIn = false;
-                    break;
-                }   
-                /**
-                 * @brief If logged in fill up the suer details in the suer details struct
-                 * 
-                 */
-                else{
-                    loggedIn = true;
-                    user.userName = uname;
-                    break;
-                }
-            }
-            itr++;
-        }
-    }
-
-    if(loggedIn){
-        if(ud.service== "/" || ud.service=="/index" || ud.service =="/register" || ud.service == "/dashboard"){
-                /**
-                 * personalised response for dashboard                 * 
-
-                 * @brief make response -> dynamic renderd file location .
-                 *  response = call dynamicHTMLrender('requested FIle',user) 
-                 */
-            sr.response = "/dashboard.html";
-        }
-        else if(ud.service == "/logout"){
-            removeSessionKey(sessionKey);
-            sr.response = "";
-            sr.reqHeader = "Set-Cookie: sessionId="+getsessionKey(ud.cg[0].value,ud.cg[1].value) \
-                            +string("\r\n") +string("Location: /index.html");
-            sr.responseCode = HTTP_SEE_OTHER;
-        }
-        else{
-            sr.responseCode = HTTP_FILE_NOT_FOUND;
-        }
-        return sr;
-    }
-    else{
-        //default
-        if(ud.service == "/" || ud.service == "/index"){
-            sr.response = "/index.html";
-        }
-
-        // login page request
-        else if(ud.service == "/login" ){
-
-            if(ud.numberOfArg > 0){
-            
-                // check the args are as per the service 
-                if(ud.cg[0].name=="name" && ud.cg[1].name=="pass" ){
-
-                    // do the service 
-                    if(db_table.size()>0 ){
-                        print_debug(ud.cg[0].value);
-                        print_debug(ud.cg[1].value);
-                        map<string,string>::iterator itr = db_table.find(ud.cg[0].value);
-                        if(db_table.end()!=itr){
-                            if(itr->second == ud.cg[1].value){
-                                sr.response =  "";
-                                sr.reqHeader = "Set-Cookie: sessionId="+getsessionKey(ud.cg[0].value,ud.cg[1].value) \
-                                                +string("\r\n") + string("Location: /dashboard.html") ;
-                                sr.responseCode = HTTP_SEE_OTHER;
-
-                            }
-                        }
-                        else{
-                            sr.responseCode = HTTP_UNAUTHORISED_ACCESS;
-                        }
-                    }
-                    else{
-                        sr.responseCode = HTTP_UNAUTHORISED_ACCESS;
-                    }
-                }
-                else{
-                    sr.responseCode = HTTP_FILE_NOT_FOUND;
-                }
-            }
-            else{
-                sr.response = "/login.html";    
-            }
-        }
-        // register page request
-        else if(ud.service == "/register"){
-
-            if(ud.numberOfArg > 0){
-                // check the args are as per the service 
-                if(ud.cg[0].name=="name" && ud.cg[1].name=="pass"){
-                        db_table[ud.cg[0].value] = ud.cg[1].value;
-                        sr.response =  "";
-                        sr.reqHeader = string("Location: /login.html") ;
-                        sr.responseCode = HTTP_SEE_OTHER;
-                }
-                else{
-                    sr.responseCode = HTTP_FILE_NOT_FOUND;
-                }
-            }
-            else{
-                sr.response = "/register.html";
-            }
-        }
-        // dashboard page request
-        else if(ud.service == "/dashboard"){
-            sr.responseCode = HTTP_UNAUTHORISED_ACCESS;
-        }
-        // If any other page request 
-        else{
-            sr.response = ud.service + "." + ud.ext;
-        }
-    }
-    
-    // return the response 
-    return sr;
-}
-
-
 /* 
  * Thread handling each of the client requests
  */
-void * workingThread (void *param){
+void * requestProcessor (void *param){
 
     struct params * p = (struct params *) param;    
     char buffer[8096];
-    string header = "" ;
-    string data ="";
+    std::string  header = "" ;
+    std::string  data ="";
 
     int num_byte_recvd = recv(p->client_socket,buffer,8096,0);
     
     print_debug("------------------------------");
 
-    print_debug(string(buffer,0,num_byte_recvd));
-    struct reqHeader requestHeader =  parseReqHeader(string(buffer,0,num_byte_recvd));
+    print_debug(std::string (buffer,0,num_byte_recvd));
+    struct reqHeader requestHeader =  parseReqHeader(std::string (buffer,0,num_byte_recvd));
     
     //default error code
         int httpResponseCode = HTTP_FILE_NOT_FOUND;
     
     if(requestHeader.valid){
         
-        string url = requestHeader.url;
+        std::string  url = requestHeader.url;
         struct stat fst;
-        string requestedFile = "";
+        std::string  requestedFile = "";
         struct serviceResponse sr;
 
         // parse the URL        
@@ -268,7 +104,7 @@ void * workingThread (void *param){
 
         // reslove the service
         if(url_decoded.valid){
-            sr.reqHeader = "";
+            sr.responseHeader = "";
             sr = resolveRequest(url_decoded,requestHeader);
             if(sr.response != "")
                 requestedFile = websiteFolder +  sr.response;
@@ -296,62 +132,62 @@ void * workingThread (void *param){
             requestedFile = "Error404.html";
         }
         // set the header as per the response 
-        header = string("HTTP/1.1 ") + to_string(httpResponseCode) +string(" ok\r\n");
+        header = std::string ("HTTP/1.1 ") + std::to_string(httpResponseCode) +std::string (" ok\r\n");
         int type =  parseContentType(requestedFile);    
                                            
         switch (type)
         {
             case HTML:
-                header = header + string("Content-Type: text/html");
+                header = header + std::string ("Content-Type: text/html");
                 break;
                             
             case ICO:
-                header = header + string("Content-Type: image/vnd.microsoft.icon");
+                header = header + std::string ("Content-Type: image/vnd.microsoft.icon");
                 break;
             
             
             case PNG:
-                header = header + string("Content-Type: image/png");
+                header = header + std::string ("Content-Type: image/png");
                 break;
             
             
             case CSS:
-                header = header + string("Content-Type: text/css");
+                header = header + std::string ("Content-Type: text/css");
                 break;
             
             
             case JPEG:
-                header = header + string("Content-Type: image/jpeg");
+                header = header + std::string ("Content-Type: image/jpeg");
                 break;
             
             
             case JSON:
-                header = header + string("Content-Type: text/json");
+                header = header + std::string ("Content-Type: text/json");
                 break;
             
             case JS:
-                header = header + string("Content-Type: text/javescript");
+                header = header + std::string ("Content-Type: text/javescript");
                 break;
             
             case NONE:
-                header = header + string("Content-Type: text/plain");
+                header = header + std::string ("Content-Type: text/plain");
                 break;
 
             default:
-                header = header + string("Content-Type: text/plain");
+                header = header + std::string ("Content-Type: text/plain");
                 break;            
         }
         
         // if any extra header requirement then added
-        if(sr.reqHeader !=""){
-            header+= string("\r\n") + sr.reqHeader + string("\r\n");
+        if(sr.responseHeader !=""){
+            header+= std::string ("\r\n") + sr.responseHeader + std::string ("\r\n");
         }
 
         print_debug(header);
             
         // send data to clinet
         if(httpResponseCode == HTTP_SEE_OTHER){
-            header += string("Content-Length: 0") + string("\r\n\r\n");
+            header += std::string ("Content-Length: 0") + std::string ("\r\n\r\n");
             send(p->client_socket,header.c_str(),header.size(),0);
         }
         else{
@@ -374,7 +210,7 @@ int setupInitConnection(){
 
     // port check 
     if(listening_sock==-1){
-        cerr<<"Unable to open socket"<<endl;
+        std::cerr<<"Unable to open socket"<<std::endl;
         return -1;
     }
 
@@ -384,19 +220,19 @@ int setupInitConnection(){
     // reverse the bits of the port fron host number to netwrok number 
     host_addr.sin_port = htons(PORT);
 
-    // add address to the sockaddr_in while converting string to ipv4 address
+    // add address to the sockaddr_in while converting std::string  to ipv4 address
     inet_pton(AF_INET,IP.c_str(),&host_addr.sin_addr);
 
     // adding reusable tag to the port
     const int enable = 1;
     if (setsockopt(listening_sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0){
-        cerr<<"setsockopt(SO_REUSEADDR) failed";    
+        std::cerr<<"setsockopt(SO_REUSEADDR) failed";    
         return -1;
     }
 
     // bind a socket 
     if(bind(listening_sock,(sockaddr*)&host_addr,sizeof(sockaddr_in))==-1){
-        cerr<<"Bind unsuccessful : Unable to bond to given socket"<<endl;
+        std::cerr<<"Bind unsuccessful : Unable to bond to given socket"<<std::endl;
         return -1;
     }
 
@@ -408,7 +244,7 @@ int setupInitConnection(){
     1. accepts the connection 
     2. creates a new thread for the request to be handled
 */
-void loadBalancer(int listening_sock){
+void requestHander(int listening_sock){
     
     // threads for processes
     pthread_t  * wt_pth = (pthread_t*) malloc(sizeof(int));
@@ -419,12 +255,12 @@ void loadBalancer(int listening_sock){
         if (commPrm->client_socket !=-1){
 
             
-            cout<<"Connected to client on port "<<commPrm->client_socket<<endl; 
+            std::cout<<"Connected to client on port "<<commPrm->client_socket<<std::endl; 
             
             //*******************creating  thread for each request *****************
             
             if(serverType == Thread_Based_Server){
-                if(pthread_create(&wt_pth[0],0,workingThread,(void*)commPrm)==0){
+                if(pthread_create(&wt_pth[0],0,requestProcessor,(void*)commPrm)==0){
                     continue;
                 }
                 else{
@@ -437,7 +273,7 @@ void loadBalancer(int listening_sock){
 
                 int pid = fork();
                 if(pid==0){
-                    workingThread((void *)commPrm);
+                    requestProcessor((void *)commPrm);
                     // cout<<"------------child process starts----------------------"<<endl;
                     close(commPrm->client_socket);
                     // cout<<"------------child process ends----------------------"<<endl;
@@ -450,13 +286,34 @@ void loadBalancer(int listening_sock){
             }
         }       
         else{
-            cerr<<"Connection not established";
+            std::cerr<<"Connection not established";
         }
     } 
 }
 
+/**
+ * @brief Delete temporary files on exit.
+ * 
+ */
+void handle_exit(){
+    std::string  tempDir = "rm  -r " + websiteFolder + "/tmp";
+    system(tempDir.c_str());
+}
+/**
+ * @brief Handles the exit signal . 
+ * 
+ * @param signal_num 
+ */
+void signal_handler( int signal_num ) {
+    handle_exit();
+    exit(signal_num);  
+}
+
 /* Main Code */
 int main(int argc,char** argcv){
+
+    // handling exit signal 
+    signal(SIGINT, signal_handler);  
 
     // random initialization for hashMap
     srand(time(NULL));
@@ -468,7 +325,7 @@ int main(int argc,char** argcv){
     int listening_sock = setupInitConnection();
 
     // // load balancer call
-    loadBalancer(listening_sock);
+    requestHander(listening_sock);
 
     // // close listening socket
     // close (listening_sock);

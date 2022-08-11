@@ -1,3 +1,10 @@
 {
-    "makefile.extensionOutputFolder": "./.vscode"
+    "makefile.extensionOutputFolder": "./.vscode",
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/avi/Work/c++ server",
+            "binaryPath": "/home/avi/Work/c++ server/server",
+            "binaryArgs": []
+        }
+    ]
 }

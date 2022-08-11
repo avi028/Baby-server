@@ -31,14 +31,19 @@
     *********************************************/
 
 
-    /* Structure to store the arguments received in the client request
+
+   /**
+    * @brief  Structure to store the arguments received in the client request
+    * 
     */
     struct requestArg{
         std::string name;
         std::string value;
     };
 
-    /* URL structure to store the different sections of URL 
+   /**
+    * @brief  URL structure to store the different sections of URL 
+    * 
     */
     struct urlDecode{
         std::string service;
@@ -48,8 +53,10 @@
         bool valid;
     };
 
-    /* Request header structure to decode and store the different parts of the Header section of the client Request 
-    */
+    /**
+     * @brief  Request header structure to decode and store the different parts of the Header section of the client Request 
+     * 
+     */
     struct reqHeader{
         std::string  typeOfReq;
         std::string  url;
@@ -63,10 +70,12 @@
         bool valid;
     };
 
-    /* To Response to the client Request below mentioned things are required 
-    */
+    /**
+     * @brief To Response to the client Request below mentioned things are required 
+     * 
+     */
     struct serviceResponse{
-        std::string reqHeader;
+        std::string responseHeader;
         std::string response;
         int responseType;
         int responseCode;

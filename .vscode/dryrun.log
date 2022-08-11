@@ -1,3 +1,7 @@
-make --dry-run --always-make --keep-going --print-directory
-/bin/sh: 1: make: not found
-
+make all --dry-run --keep-going --print-directory
+make: Entering directory '/home/avi/Work/c++ server'
+g++ -c webServer.cpp -o webServer.o
+g++ -c responseHandler.cpp -o responseHandler.o
+g++ webServer.o utils.o sessions.o parsers.o responseHandler.o -o server -lpthread
+make: Leaving directory '/home/avi/Work/c++ server'
+ 
