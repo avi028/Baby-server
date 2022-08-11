@@ -1,13 +1,13 @@
-#include "includes.h"
+#include "../includes/includes.h"
 
-#include "def.h"
-#include "utils.h"
-#include "structDef.h"
-#include "user_def.h"
-#include "externs.h"
-#include "sessions.h"
-#include "parsers.h"
-#include "dynamicHTMLRenderer.h"
+#include "../includes/def.h"
+#include "../includes/utils.h"
+#include "../includes/structDef.h"
+#include "../includes/user_def.h"
+#include "../includes/externs.h"
+#include "../includes/sessions.h"
+#include "../includes/parsers.h"
+#include "../includes/dynamicHTMLRenderer.h"
 
 /*   */
 

@@ -1,7 +1,7 @@
 # BABY SERVER IN C++
 ## Bare minimum http server created from scratch in c++.
 - Supports Static and Dynamic webpages.
-- To use change the `webServer.config` file as per your need and run.
+- To use change the `server_config.mk` file as per your need and run.
 - A TestWebsite is contained that includes :
     - Both `GET` and `POST` kind of forms.
     - Basic authentication with register and login to showcase the session management using `COOKIES`.

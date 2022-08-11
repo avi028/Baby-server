@@ -7,6 +7,7 @@ std::string websiteFolder;
 std::string IP;
 int PORT;
 int serverType;
+int listening_sock;
 
 // Temp volatile databse just of checking 
 std::map<std::string,std::string> db_table;

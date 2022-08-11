@@ -1,13 +1,13 @@
 #include <csignal>
 #include <stdlib.h>
-#include "includes.h"
+#include "../includes/includes.h"
 
-#include "def.h"
-#include "utils.h"
-#include "structDef.h"
-#include "externs.h"
-#include "globals.h"
-#include "parsers.h"
+#include "../includes/def.h"
+#include "../includes/utils.h"
+#include "../includes/structDef.h"
+#include "../includes/externs.h"
+#include "../includes/globals.h"
+#include "../includes/parsers.h"
 
 /**
  * @brief definend by user
@@ -123,13 +123,13 @@ void * requestProcessor (void *param){
 
         // check if authorized access
         else if(httpResponseCode == HTTP_UNAUTHORISED_ACCESS && requestedFile==""){
-            requestedFile = "Error401.html";
+            requestedFile = "errorPages/Error401.html";
         }
 
         // check if content is available
         else if(stat(requestedFile.c_str(),&fst)!=0 || httpResponseCode == HTTP_FILE_NOT_FOUND){
             httpResponseCode =  HTTP_FILE_NOT_FOUND;
-            requestedFile = "Error404.html";
+            requestedFile = "errorPages/Error404.html";
         }
         // set the header as per the response 
         header = std::string ("HTTP/1.1 ") + std::to_string(httpResponseCode) +std::string (" ok\r\n");
@@ -292,13 +292,24 @@ void requestHander(int listening_sock){
 }
 
 /**
- * @brief Delete temporary files on exit.
+ * @brief Delete temporary files and closing connection on exit.
  * 
  */
 void handle_exit(){
-    std::string  tempDir = "rm  -r " + websiteFolder + "/tmp";
-    system(tempDir.c_str());
+    struct stat folderst;
+    std::string tmpFolder= websiteFolder + "/tmp" ; 
+    if(stat(tmpFolder.c_str(),&folderst)!=-1){
+        std::cout<<"Deleting tmp files...."<<std::endl;
+        std::string  tempDir = "rm  -r " + tmpFolder;
+        std::
+        system(tempDir.c_str());
+        std::cout<<"files deleted"<<std::endl;
+    }
+    std::cout<<"CLosing connection ...."<<std::endl;
+    close(listening_sock);
+    std::cout<<"connection closed"<<std::endl;
 }
+
 /**
  * @brief Handles the exit signal . 
  * 
@@ -311,7 +322,6 @@ void signal_handler( int signal_num ) {
 
 /* Main Code */
 int main(int argc,char** argcv){
-
     // handling exit signal 
     signal(SIGINT, signal_handler);  
 
@@ -322,7 +332,7 @@ int main(int argc,char** argcv){
     loadConfigFile();
 
     // // listen on the socket
-    int listening_sock = setupInitConnection();
+    listening_sock = setupInitConnection();
 
     // // load balancer call
     requestHander(listening_sock);

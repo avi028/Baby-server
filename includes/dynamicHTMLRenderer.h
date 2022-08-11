@@ -80,7 +80,6 @@ std::string dyHTMLRender (T& objInstance , std::string htmlfile){
     struct stat folderst;
     if(stat(tmpFolder.c_str(),&folderst)==-1){
         mkdir(tmpFolder.c_str(),0700);
-
     }
 
     std::string data = NULL_str;

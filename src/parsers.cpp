@@ -1,8 +1,8 @@
-#include "includes.h"
-#include "def.h"
-#include "externs.h"
-#include "utils.h"
-#include "parsers.h"
+#include "../includes/includes.h"
+#include "../includes/def.h"
+#include "../includes/externs.h"
+#include "../includes/utils.h"
+#include "../includes/parsers.h"
 
 /* Decodes the URL .
     Input : URL std::string 

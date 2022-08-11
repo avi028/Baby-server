@@ -1,7 +1,8 @@
 make all --dry-run --keep-going --print-directory
 make: Entering directory '/home/avi/Work/c++ server'
-g++ -c webServer.cpp -o webServer.o
-g++ -c responseHandler.cpp -o responseHandler.o
-g++ webServer.o utils.o sessions.o parsers.o responseHandler.o -o server -lpthread
+g++ build/obj/utils.o build/obj/webServer.o build/obj/sessions.o build/obj/parsers.o build/obj/responseHandler.o -o build/server -lpthread
+echo "#############################################################################"
+echo "Build Successful"
+echo "To run the server use - make run "
 make: Leaving directory '/home/avi/Work/c++ server'
  

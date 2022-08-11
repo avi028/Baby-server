@@ -7,6 +7,7 @@ extern std::string websiteFolder;
 extern std::string IP;
 extern int PORT;
 extern int serverType;
+extern int listening_sock;
 
 // Session data storage
 extern std::map<std::string,std::pair<std::string,std::string> > sessionKeyTable; 

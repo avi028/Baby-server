@@ -1,36 +1,47 @@
 # -*- Makefile -*-
 
-## Receipies
-#targets : dependencies 
-#<tab>actions
+include server_config.mk 
 
+IDIR =includes
+CC=g++
+ODIR=build/obj
+LIBS=-lpthread
+SDIR=src
+TARGET=build/server
 
-all: webServer.o utils.o sessions.o parsers.o responseHandler.o
-	g++ webServer.o utils.o sessions.o parsers.o responseHandler.o -o server -lpthread
+_DEPS=def.h user_def.h includes.h structDef.h reflection.h utils.h sessions.h globals.h externs.h dynamicHTMLRenderer.h
+_OBJS=utils.o webServer.o sessions.o parsers.o responseHandler.o
 
-webServer.o:webServer.cpp def.h user_def.h includes.h structDef.h reflection.h utils.h sessions.h globals.h externs.h dynamicHTMLRenderer.h
-	g++ -c webServer.cpp -o $@
+DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
+OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
 
-# For testing the reflection logic 'refection.cpp not used in main code '
-#reflection.o:reflection.cpp def.h user_def.h includes.h structDef.h reflection.h
-#	g++ -c reflection.cpp -o $@
+all:$(OBJS) $(DEPS)
+	$(CC) $(OBJS) -o $(TARGET) $(LIBS)
+	@echo "#############################################################################"
+	@echo "Build Successful"
+	@echo "To run the server use - make run "
 
-utils.o:utils.cpp includes.h utils.h def.h utils.cpp
-	g++ -c utils.cpp -o $@
+$(ODIR)/sessions.o:$(SDIR)/sessions.cpp $(DEPS)
+	$(CC) -c $(SDIR)/sessions.cpp -o $@
 
-sessions.o:sessions.cpp includes.h def.h sessions.h externs.h sessions.cpp
-	g++ -c sessions.cpp -o $@
+$(ODIR)/parsers.o:$(SDIR)/parsers.cpp $(DEPS)
+	$(CC) -c $(SDIR)/parsers.cpp -o $@
 
-parsers.o:parsers.cpp includes.h def.h parsers.h externs.h
-	g++ -c parsers.cpp -o $@
+$(ODIR)/responseHandler.o:$(SDIR)/responseHandler.cpp $(DEPS) 
+	$(CC) -c $(SDIR)/responseHandler.cpp -o $@
 
-responseHandler.o: user_def.h externs.h 
-	g++ -c responseHandler.cpp -o $@
+$(ODIR)/webServer.o:$(SDIR)/webServer.cpp $(DEPS)
+	$(CC) -c $(SDIR)/webServer.cpp -o $@ $(LIBS)
 
-clean: 
-	@rm -f *.o *.out server
+$(ODIR)/utils.o:$(SDIR)/utils.cpp $(DEPS)
+	$(CC) -c $(SDIR)/utils.cpp -o $@
+
+.PHONY: clean
+
+clean:
+	@rm -f $(ODIR)/*.o $(TARGET)
 
 run:
-	@./server
-
-.PHONY: clean all run
+	@echo "Website Folder name -> $(WebSiteFolderName)  IP -> $(IP_ADDRESS):$(PORT)"
+	@echo "------------------------------------------------------------------------"
+	-@build/./server

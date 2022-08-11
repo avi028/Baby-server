@@ -5,8 +5,9 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
+ 
 
-# Make data base, printed on Thu Aug 11 06:07:08 2022
+# Make data base, printed on Fri Aug 12 03:06:55 2022
 
 # Variables
 
@@ -24,6 +25,8 @@ DESKTOP_SESSION = ubuntu
 XDG_SESSION_CLASS = user
 # environment
 XDG_SESSION_TYPE = x11
+# makefile (from 'Makefile', line 10)
+TARGET = build/server
 # automatic
 ?D = $(patsubst %/,%,$(dir $?))
 # environment
@@ -40,18 +43,21 @@ XMODIFIERS = @im=ibus
 CURDIR := /home/avi/Work/c++ server
 # makefile
 SHELL = /bin/sh
+# makefile (from 'server_config.mk', line 4)
+SERVER_TYPE = 1
 # environment
 VSCODE_NLS_CONFIG = {"locale":"en-gb","availableLanguages":{},"_languagePackSupport":true}
 # environment
 _ = /usr/share/code/code
 # environment
-JOURNAL_STREAM = 8:58838
+JOURNAL_STREAM = 8:59540
 # environment
 XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
-# makefile (from 'Makefile', line 1)
-MAKEFILE_LIST :=  Makefile
+# makefile (from 'server_config.mk', line 1)
+MAKEFILE_LIST :=  Makefile server_config.mk
 # environment
 JAVA_HOME = 
+ 
 # automatic
 @F = $(notdir $@)
 # environment
@@ -60,10 +66,14 @@ GIO_LAUNCHED_DESKTOP_FILE = /usr/share/applications/code.desktop
 USERNAME = avi
 # environment
 XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
+# makefile (from 'Makefile', line 13)
+_OBJS = utils.o webServer.o sessions.o parsers.o responseHandler.o
 # environment
 DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus
+# makefile (from 'Makefile', line 16)
+OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
 # environment
-MANAGERPID = 2806
+MANAGERPID = 2615
 # environment
 LESSOPEN = | /usr/bin/lesspipe %s
 # environment
@@ -75,15 +85,18 @@ PATH = /usr/local/lib/nodejs/node-v14.17.4-linux-x64/bin:/home/avi/.local/bin:/h
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/avi-Nitro-AN515-44:@/tmp/.ICE-unix/3107,unix/avi-Nitro-AN515-44:/tmp/.ICE-unix/3107
+SESSION_MANAGER = local/avi-Nitro-AN515-44:@/tmp/.ICE-unix/2911,unix/avi-Nitro-AN515-44:/tmp/.ICE-unix/2911
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
 XDG_MENU_PREFIX = gnome-
 # environment
+ 
 ELECTRON_RUN_AS_NODE = 1
+# makefile (from 'server_config.mk', line 6)
+PORT = 8080
 # environment
-INVOCATION_ID = 6a958ce949d54cf88003b4f4815ab70f
+INVOCATION_ID = f5fbda8c654945ab8655c8f3f2e10780
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # environment
@@ -93,17 +106,21 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 30717
+GIO_LAUNCHED_DESKTOP_FILE_PID = 4779
 # automatic
 %F = $(notdir $%)
+# makefile (from 'Makefile', line 12)
+_DEPS = def.h user_def.h includes.h structDef.h reflection.h utils.h sessions.h globals.h externs.h dynamicHTMLRenderer.h
 # environment
 DISPLAY = :1
 # environment
 PWD = /home/avi/Work/c++ server
+# makefile (from 'server_config.mk', line 5)
+IP_ADDRESS = 127.0.0.1
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 3041
+SSH_AGENT_PID = 2845
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -115,11 +132,13 @@ HOME = /home/avi
 # environment
 LESSCLOSE = /usr/bin/lesspipe %s %s
 # environment
-VSCODE_CODE_CACHE_PATH = /home/avi/.config/Code/CachedData/3b889b090b5ad5793f524b5d1d39fda662b96a2a
+VSCODE_CODE_CACHE_PATH = /home/avi/.config/Code/CachedData/da76f93349a72022ca4670c1b84860304616aaa2
 # environment
 LOGNAME = avi
 # environment
 APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = 1
+# makefile (from 'Makefile', line 5)
+IDIR = includes
 # environment
 VSCODE_HANDLES_UNCAUGHT_ERRORS = true
 # environment
@@ -136,8 +155,12 @@ MAKECMDGOALS := all
 QT_IM_MODULE = ibus
 # environment
 SHLVL = 0
+# makefile (from 'Makefile', line 6)
+CC = g++
 # environment
 GNOME_SHELL_SESSION_MODE = ubuntu
+# makefile (from 'Makefile', line 7)
+ODIR = build/obj
 # default
 MAKE_VERSION := 4.2.1
 # environment
@@ -148,6 +171,8 @@ USER = avi
 XDG_CURRENT_DESKTOP = Unity
 # automatic
 %D = $(patsubst %/,%,$(dir $%))
+# makefile (from 'Makefile', line 9)
+SDIR = src
 # default
 MAKE_COMMAND := make
 # default
@@ -157,7 +182,7 @@ MAKE_COMMAND := make
 # environment
 LANGUAGE = en_IN:en
 # environment
-VSCODE_IPC_HOOK = /run/user/1000/vscode-9f80dd86-1.69.2-main.sock
+VSCODE_IPC_HOOK = /run/user/1000/vscode-9f80dd86-1.70.0-main.sock
 # makefile
 MAKEFLAGS = pqrR
 # environment
@@ -171,17 +196,25 @@ GDK_BACKEND = x11
 # automatic
 +F = $(notdir $+)
 # environment
+NO_AT_BRIDGE = 1
+# environment
 QT_ACCESSIBILITY = 1
 # default
 MAKEFILES := 
 # automatic
 <F = $(notdir $<)
+# makefile (from 'server_config.mk', line 7)
+WebSiteFolderName = testWebsite
 # environment
 LC_ALL = C
 # environment
 GJS_DEBUG_TOPICS = JS ERROR;JS LOG
+# makefile (from 'Makefile', line 8)
+LIBS = -lpthread
 # automatic
 ^F = $(notdir $^)
+# makefile (from 'Makefile', line 15)
+DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 # default
 SUFFIXES := 
 # environment
@@ -197,9 +230,9 @@ GJS_DEBUG_OUTPUT = stderr
 # environment
 LANG = C
 # environment
-VSCODE_PID = 30717
+VSCODE_PID = 4779
 # variable set hash-table stats:
-# Load=94/1024=9%, Rehash=0, Collisions=13/122=11%
+# Load=109/1024=11%, Rehash=0, Collisions=23/176=13%
 
 # Pattern-specific Variable Values
 
@@ -207,107 +240,95 @@ VSCODE_PID = 30717
 
 # Directories
 
-# . (device 2052, inode 6426474): 35 files, no impossibilities.
+# . (device 2052, inode 6426474): 16 files, no impossibilities.
 
-# 35 files, no impossibilities in 1 directories.
+# 16 files, no impossibilities in 1 directories.
 
 # Implicit Rules
+ 
 
 # No implicit rules.
 
 # Files
 
 # Not a target:
-def.h:
+src/sessions.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-08-02 00:16:50.022237719
+#  Last modified 2022-08-11 21:05:00.948488722
 #  File has been updated.
 #  Successfully updated.
 
 # Not a target:
-parsers.cpp:
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
-
-# Not a target:
-dynamicHTMLRenderer.h:
+server_config.mk:
 #  Implicit rule search has been done.
-#  Last modified 2022-08-11 00:39:52.642890389
+#  Last modified 2022-08-12 02:34:46.466950081
 #  File has been updated.
 #  Successfully updated.
 
 # Not a target:
-globals.h:
+includes/externs.h:
 #  Implicit rule search has been done.
-#  Last modified 2022-07-30 22:50:29.130691578
+#  Last modified 2022-08-12 03:03:51.297721893
 #  File has been updated.
 #  Successfully updated.
 
-all: webServer.o utils.o sessions.o parsers.o responseHandler.o
-#  Phony target (prerequisite of .PHONY).
+# Not a target:
+includes/includes.h:
+#  Implicit rule search has been done.
+#  Last modified 2022-07-12 00:22:08.196627013
+#  File has been updated.
+#  Successfully updated.
+
+all: build/obj/utils.o build/obj/webServer.o build/obj/sessions.o build/obj/parsers.o build/obj/responseHandler.o includes/def.h includes/user_def.h includes/includes.h includes/structDef.h includes/reflection.h includes/utils.h includes/sessions.h includes/globals.h includes/externs.h includes/dynamicHTMLRenderer.h
 #  Command line target.
 #  Implicit rule search has not been done.
+#  Implicit/static pattern stem: ''
 #  File does not exist.
 #  File has been updated.
 #  Needs to be updated (-q is set).
-# variable set hash-table stats:
-# Load=0/32=0%, Rehash=0, Collisions=0/3=0%
-#  recipe to execute (from 'Makefile', line 9):
-	g++ webServer.o utils.o sessions.o parsers.o responseHandler.o -o server -lpthread
-
-# Not a target:
-structDef.h:
-#  Implicit rule search has been done.
-#  Last modified 2022-07-13 17:23:32.737395994
-#  File has been updated.
-#  Successfully updated.
-
-.PHONY: clean all run
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
-
-webServer.o: webServer.cpp def.h user_def.h includes.h structDef.h reflection.h utils.h sessions.h globals.h externs.h dynamicHTMLRenderer.h
-#  Implicit rule search has not been done.
-#  Implicit/static pattern stem: ''
-#  Last modified 2022-08-11 00:38:07.573428036
-#  File has been updated.
-#  Needs to be updated (-q is set).
 # automatic
-# @ := webServer.o
+# @ := all
 # automatic
 # % := 
 # automatic
 # * := 
 # automatic
-# + := webServer.cpp def.h user_def.h includes.h structDef.h reflection.h utils.h sessions.h globals.h externs.h dynamicHTMLRenderer.h
+# + := build/obj/utils.o build/obj/webServer.o build/obj/sessions.o build/obj/parsers.o build/obj/responseHandler.o includes/def.h includes/user_def.h includes/includes.h includes/structDef.h includes/reflection.h includes/utils.h includes/sessions.h includes/globals.h includes/externs.h includes/dynamicHTMLRenderer.h
 # automatic
 # | := 
 # automatic
-# < := webServer.cpp
+# < := build/obj/utils.o
 # automatic
-# ^ := webServer.cpp def.h user_def.h includes.h structDef.h reflection.h utils.h sessions.h globals.h externs.h dynamicHTMLRenderer.h
+# ^ := build/obj/utils.o build/obj/webServer.o build/obj/sessions.o build/obj/parsers.o build/obj/responseHandler.o includes/def.h includes/user_def.h includes/includes.h includes/structDef.h includes/reflection.h includes/utils.h includes/sessions.h includes/globals.h includes/externs.h includes/dynamicHTMLRenderer.h
 # automatic
-# ? := webServer.cpp dynamicHTMLRenderer.h
+# ? := build/obj/utils.o build/obj/webServer.o build/obj/sessions.o build/obj/parsers.o build/obj/responseHandler.o includes/def.h includes/user_def.h includes/includes.h includes/structDef.h includes/reflection.h includes/utils.h includes/sessions.h includes/globals.h includes/externs.h includes/dynamicHTMLRenderer.h
 # variable set hash-table stats:
-# Load=8/32=25%, Rehash=0, Collisions=1/12=8%
-#  recipe to execute (from 'Makefile', line 12):
-	g++ -c webServer.cpp -o $@
+# Load=8/32=25%, Rehash=0, Collisions=3/17=18%
+#  recipe to execute (from 'Makefile', line 19):
+	$(CC) $(OBJS) -o $(TARGET) $(LIBS)
+	@echo "#############################################################################"
+	@echo "Build Successful"
+	@echo "To run the server use - make run "
+
+.PHONY: clean
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
 
 # Not a target:
-reflection.h:
+src/utils.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-08-10 23:22:24.322416255
+#  Last modified 2022-08-12 03:00:05.601504172
 #  File has been updated.
 #  Successfully updated.
 
-# Not a target:
-sessions.h:
-#  Implicit rule search has been done.
-#  Last modified 2022-07-30 22:53:36.200065252
+build/obj/parsers.o: src/parsers.cpp includes/def.h includes/user_def.h includes/includes.h includes/structDef.h includes/reflection.h includes/utils.h includes/sessions.h includes/globals.h includes/externs.h includes/dynamicHTMLRenderer.h
+#  Implicit rule search has not been done.
+#  Last modified 2022-08-12 03:05:25.496143292
 #  File has been updated.
 #  Successfully updated.
+#  recipe to execute (from 'Makefile', line 28):
+	$(CC) -c $(SDIR)/parsers.cpp -o $@
 
 # Not a target:
 .SUFFIXES:
@@ -316,50 +337,37 @@ sessions.h:
 #  File has not been updated.
 
 # Not a target:
-utils.h:
-#  Implicit rule search has been done.
-#  Last modified 2022-08-02 02:16:09.476171777
-#  File has been updated.
-#  Successfully updated.
-
-# Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-08-11 06:07:06.436298003
- 
+#  Last modified 2022-08-12 03:05:55.747636324
 #  File has been updated.
 #  Successfully updated.
 
 # Not a target:
-sessions.cpp:
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
-
-# Not a target:
-utils.cpp:
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
-
-# Not a target:
-user_def.h:
+includes/reflection.h:
 #  Implicit rule search has been done.
-#  Last modified 2022-08-09 00:30:16.914711476
+#  Last modified 2022-08-11 06:43:30.745385056
 #  File has been updated.
 #  Successfully updated.
 
-parsers.o: parsers.cpp includes.h def.h parsers.h externs.h
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
-#  recipe to execute (from 'Makefile', line 25):
-	g++ -c parsers.cpp -o $@
+# Not a target:
+src/parsers.cpp:
+#  Implicit rule search has been done.
+#  Last modified 2022-08-11 21:11:38.689104299
+#  File has been updated.
+#  Successfully updated.
 
 # Not a target:
-includes.h:
+includes/structDef.h:
 #  Implicit rule search has been done.
-#  Last modified 2022-07-12 00:22:08.196627013
+#  Last modified 2022-08-11 06:39:11.541035083
+#  File has been updated.
+#  Successfully updated.
+
+# Not a target:
+includes/sessions.h:
+#  Implicit rule search has been done.
+#  Last modified 2022-07-30 22:53:36.200065252
 #  File has been updated.
 #  Successfully updated.
 
@@ -369,77 +377,119 @@ includes.h:
 #  Modification time never checked.
 #  File has not been updated.
 
-# Not a target:
-externs.h:
-#  Implicit rule search has been done.
-#  Last modified 2022-07-30 22:50:43.810466496
-#  File has been updated.
-#  Successfully updated.
-
-# Not a target:
-webServer.cpp:
-#  Implicit rule search has been done.
-#  Last modified 2022-08-11 04:46:29.038398129
-#  File has been updated.
-#  Successfully updated.
-
 run:
-#  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
-#  File does not exist.
+#  Modification time never checked.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 34):
-	@./server
+#  recipe to execute (from 'Makefile', line 45):
+	@echo "Website Folder name -> $(WebSiteFolderName)  IP -> $(IP_ADDRESS):$(PORT)"
+	@echo "------------------------------------------------------------------------"
+	-@build/./server
 
 clean:
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 31):
-	@rm -f *.o *.out server
-
-sessions.o: sessions.cpp includes.h def.h sessions.h externs.h sessions.cpp
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
-#  recipe to execute (from 'Makefile', line 22):
-	g++ -c sessions.cpp -o $@
-
-utils.o: utils.cpp includes.h utils.h def.h utils.cpp
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
-#  recipe to execute (from 'Makefile', line 19):
-	g++ -c utils.cpp -o $@
-
-responseHandler.o: user_def.h externs.h
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
-#  recipe to execute (from 'Makefile', line 28):
-	g++ -c responseHandler.cpp -o $@
+#  recipe to execute (from 'Makefile', line 42):
+	@rm -f $(ODIR)/*.o $(TARGET)
 
 # Not a target:
-parsers.h:
+includes/utils.h:
+#  Implicit rule search has been done.
+#  Last modified 2022-08-11 06:37:29.371361835
+#  File has been updated.
+#  Successfully updated.
+
+build/obj/webServer.o: src/webServer.cpp includes/def.h includes/user_def.h includes/includes.h includes/structDef.h includes/reflection.h includes/utils.h includes/sessions.h includes/globals.h includes/externs.h includes/dynamicHTMLRenderer.h
 #  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
+#  Last modified 2022-08-12 03:05:24.836154352
+#  File has been updated.
+#  Successfully updated.
+#  recipe to execute (from 'Makefile', line 34):
+	$(CC) -c $(SDIR)/webServer.cpp -o $@ $(LIBS)
+
+# Not a target:
+includes/def.h:
+#  Implicit rule search has been done.
+#  Last modified 2022-08-02 00:16:50.022237719
+#  File has been updated.
+#  Successfully updated.
+
+build/obj/responseHandler.o: src/responseHandler.cpp includes/def.h includes/user_def.h includes/includes.h includes/structDef.h includes/reflection.h includes/utils.h includes/sessions.h includes/globals.h includes/externs.h includes/dynamicHTMLRenderer.h
+#  Implicit rule search has not been done.
+#  Last modified 2022-08-12 03:05:25.888136723
+#  File has been updated.
+#  Successfully updated.
+#  recipe to execute (from 'Makefile', line 31):
+	$(CC) -c $(SDIR)/responseHandler.cpp -o $@
+
+# Not a target:
+includes/dynamicHTMLRenderer.h:
+#  Implicit rule search has been done.
+#  Last modified 2022-08-12 02:44:36.873066887
+#  File has been updated.
+#  Successfully updated.
+
+build/obj/sessions.o: src/sessions.cpp includes/def.h includes/user_def.h includes/includes.h includes/structDef.h includes/reflection.h includes/utils.h includes/sessions.h includes/globals.h includes/externs.h includes/dynamicHTMLRenderer.h
+#  Implicit rule search has not been done.
+#  Last modified 2022-08-12 03:05:25.196148319
+#  File has been updated.
+#  Successfully updated.
+#  recipe to execute (from 'Makefile', line 25):
+	$(CC) -c $(SDIR)/sessions.cpp -o $@
+
+# Not a target:
+includes/user_def.h:
+#  Implicit rule search has been done.
+#  Last modified 2022-08-11 07:03:01.898061205
+#  File has been updated.
+#  Successfully updated.
+
+# Not a target:
+includes/globals.h:
+#  Implicit rule search has been done.
+ 
+#  Last modified 2022-08-12 03:03:38.581934985
+#  File has been updated.
+#  Successfully updated.
+
+build/obj/utils.o: src/utils.cpp includes/def.h includes/user_def.h includes/includes.h includes/structDef.h includes/reflection.h includes/utils.h includes/sessions.h includes/globals.h includes/externs.h includes/dynamicHTMLRenderer.h
+#  Implicit rule search has not been done.
+#  Last modified 2022-08-12 03:05:24.464160586
+#  File has been updated.
+#  Successfully updated.
+#  recipe to execute (from 'Makefile', line 37):
+	$(CC) -c $(SDIR)/utils.cpp -o $@
+
+# Not a target:
+src/webServer.cpp:
+#  Implicit rule search has been done.
+#  Last modified 2022-08-12 03:05:11.548377029
+#  File has been updated.
+#  Successfully updated.
+
+# Not a target:
+src/responseHandler.cpp:
+#  Implicit rule search has been done.
+#  Last modified 2022-08-11 21:05:25.875996576
+#  File has been updated.
+#  Successfully updated.
 
 # files hash-table stats:
-# Load=27/1024=3%, Rehash=0, Collisions=2/81=2%
+# Load=28/1024=3%, Rehash=0, Collisions=0/118=0%
 # VPATH Search Paths
 
 # No 'vpath' search paths.
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 44 / storage = 469 B / avg = 10 B
-# current buf: size = 8162 B / used = 469 B / count = 44 / avg = 10 B
+# strcache buffers: 1 (0) / strings = 44 / storage = 616 B / avg = 14 B
+# current buf: size = 8162 B / used = 616 B / count = 44 / avg = 14 B
 
-# strcache performance: lookups = 100 / hit rate = 56%
+# strcache performance: lookups = 117 / hit rate = 62%
 # hash-table stats:
-# Load=44/8192=1%, Rehash=0, Collisions=1/100=1%
-# Finished Make data base on Thu Aug 11 06:07:08 2022
+# Load=44/8192=1%, Rehash=0, Collisions=7/117=6%
+# Finished Make data base on Fri Aug 12 03:06:55 2022
 
  

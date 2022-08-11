@@ -1,7 +1,7 @@
-#include "utils.h"
-#include "def.h"
-#include "structDef.h"
-#include "externs.h"
+#include "../includes/utils.h"
+#include "../includes/def.h"
+#include "../includes/structDef.h"
+#include "../includes/externs.h"
 
 /* ----------------------------------------------Utility Fuctions---------------------------------------------- */
 
@@ -109,7 +109,7 @@ int loadConfigFile(){
     serverType=Thread_Based_Server;
 
     // if config file is available set the vairables as per the file
-    std::ifstream f("webServer.config");
+    std::ifstream f("server_config.mk");
     if(f.good()){
         char buffer[40000];
         f.read(buffer,40000);
@@ -120,7 +120,7 @@ int loadConfigFile(){
                 continue;
             }
             else{
-                std::vector<std::string> subtokens = str_tok(tokens[i],':');
+                std::vector<std::string> subtokens = str_tok(tokens[i],'=');
                 if(subtokens[0]=="WebSiteFolderName")
                     websiteFolder = subtokens[1];
                 else if(subtokens[0]=="IP")
@@ -131,6 +131,8 @@ int loadConfigFile(){
                     serverType=atoi(subtokens[1].c_str());
             }
         }
+        std::cout<<websiteFolder<<" is running at "<<IP<<":"<<PORT<<std::endl;
+        std::cout<<"You can press Ctrl+C to exit the server"<<std::endl;
     }
     else{
         return 0;

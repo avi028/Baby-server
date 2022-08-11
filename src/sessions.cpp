@@ -1,7 +1,7 @@
-#include "utils.h"
-#include "def.h"
-#include "externs.h"
-#include "sessions.h"
+#include "../includes/utils.h"
+#include "../includes/def.h"
+#include "../includes/externs.h"
+#include "../includes/sessions.h"
 
 /* Returns the session key from the table 
     input : user std::string , key std::string 
