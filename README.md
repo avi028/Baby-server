@@ -7,6 +7,9 @@
     - Basic authentication with register and login to showcase the session management using `COOKIES`.
     - A dashboard with user name appearing to show the dynamic rendering.
     - `responseHandler.cpp` contains the example code on how to respond to `GET` and `POST` requests and also how to render dynamic webpages.
+- To use run the `make` file and then `make run` 
+- Currently tested only on linux.
+- Default IP and port is `127.0.0.1:8080`
 
 ## Further additions done \ pending : 
  1. Session management -- `DONE`
