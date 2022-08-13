@@ -1,10 +1,5 @@
-make all --dry-run --always-make --keep-going --print-directory
+make all --dry-run --keep-going --print-directory
 make: Entering directory '/home/avi/Work/c++ server'
-g++ -c src/utils.cpp -o build/obj/utils.o
-g++ -c src/webServer.cpp -o build/obj/webServer.o -lpthread
- 
-g++ -c src/sessions.cpp -o build/obj/sessions.o
-g++ -c src/parsers.cpp -o build/obj/parsers.o
 g++ -c src/responseHandler.cpp -o build/obj/responseHandler.o
 g++ build/obj/utils.o build/obj/webServer.o build/obj/sessions.o build/obj/parsers.o build/obj/responseHandler.o -o build/server -lpthread
 echo "#############################################################################"

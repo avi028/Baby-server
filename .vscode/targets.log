@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Sat Aug 13 01:22:14 2022
+# Make data base, printed on Sat Aug 13 20:12:45 2022
 
 # Variables
 
@@ -227,7 +227,7 @@ LANG = C
 # environment
 VSCODE_PID = 49296
 # variable set hash-table stats:
-# Load=108/1024=11%, Rehash=0, Collisions=23/175=13%
+# Load=108/1024=11%, Rehash=0, Collisions=20/171=12%
 
 # Pattern-specific Variable Values
 
@@ -235,9 +235,9 @@ VSCODE_PID = 49296
 
 # Directories
 
-# . (device 2052, inode 6426474): 15 files, no impossibilities.
+# . (device 2052, inode 6426474): 16 files, no impossibilities.
 
-# 15 files, no impossibilities in 1 directories.
+# 16 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -276,29 +276,12 @@ includes/includes.h:
 all: build/obj/utils.o build/obj/webServer.o build/obj/sessions.o build/obj/parsers.o build/obj/responseHandler.o includes/def.h includes/user_def.h includes/includes.h includes/structDef.h includes/reflection.h includes/utils.h includes/sessions.h includes/globals.h includes/externs.h includes/dynamicHTMLRenderer.h
 #  Command line target.
 #  Implicit rule search has not been done.
-#  Implicit/static pattern stem: ''
- 
 #  File does not exist.
 #  File has been updated.
 #  Needs to be updated (-q is set).
-# automatic
-# @ := all
-# automatic
-# % := 
-# automatic
-# * := 
-# automatic
-# + := build/obj/utils.o build/obj/webServer.o build/obj/sessions.o build/obj/parsers.o build/obj/responseHandler.o includes/def.h includes/user_def.h includes/includes.h includes/structDef.h includes/reflection.h includes/utils.h includes/sessions.h includes/globals.h includes/externs.h includes/dynamicHTMLRenderer.h
-# automatic
-# | := 
-# automatic
-# < := build/obj/utils.o
-# automatic
-# ^ := build/obj/utils.o build/obj/webServer.o build/obj/sessions.o build/obj/parsers.o build/obj/responseHandler.o includes/def.h includes/user_def.h includes/includes.h includes/structDef.h includes/reflection.h includes/utils.h includes/sessions.h includes/globals.h includes/externs.h includes/dynamicHTMLRenderer.h
-# automatic
-# ? := build/obj/utils.o build/obj/webServer.o build/obj/sessions.o build/obj/parsers.o build/obj/responseHandler.o includes/def.h includes/user_def.h includes/includes.h includes/structDef.h includes/reflection.h includes/utils.h includes/sessions.h includes/globals.h includes/externs.h includes/dynamicHTMLRenderer.h
 # variable set hash-table stats:
-# Load=8/32=25%, Rehash=0, Collisions=3/17=18%
+ 
+# Load=0/32=0%, Rehash=0, Collisions=0/5=0%
 #  recipe to execute (from 'Makefile', line 19):
 	$(CC) $(OBJS) -o $(TARGET) $(LIBS)
 	@echo "#############################################################################"
@@ -319,7 +302,7 @@ src/utils.cpp:
 
 build/obj/parsers.o: src/parsers.cpp includes/def.h includes/user_def.h includes/includes.h includes/structDef.h includes/reflection.h includes/utils.h includes/sessions.h includes/globals.h includes/externs.h includes/dynamicHTMLRenderer.h
 #  Implicit rule search has not been done.
-#  Last modified 2022-08-12 03:05:25.496143292
+#  Last modified 2022-08-13 19:41:18.083126522
 #  File has been updated.
 #  Successfully updated.
 #  recipe to execute (from 'Makefile', line 28):
@@ -334,7 +317,7 @@ build/obj/parsers.o: src/parsers.cpp includes/def.h includes/user_def.h includes
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-08-12 03:11:52.375040912
+#  Last modified 2022-08-13 20:12:42.612585943
 #  File has been updated.
 #  Successfully updated.
 
@@ -355,7 +338,7 @@ src/parsers.cpp:
 # Not a target:
 includes/structDef.h:
 #  Implicit rule search has been done.
-#  Last modified 2022-08-11 06:39:11.541035083
+#  Last modified 2022-08-13 19:01:54.114502649
 #  File has been updated.
 #  Successfully updated.
 
@@ -379,7 +362,7 @@ run:
 #  recipe to execute (from 'Makefile', line 45):
 	@echo "Website Folder name -> $(WebSiteFolderName)  IP -> $(IP_ADDRESS):$(PORT)"
 	@echo "------------------------------------------------------------------------"
-	-@build/./server
+	- @build/./server
 
 clean:
 #  Phony target (prerequisite of .PHONY).
@@ -398,7 +381,7 @@ includes/utils.h:
 
 build/obj/webServer.o: src/webServer.cpp includes/def.h includes/user_def.h includes/includes.h includes/structDef.h includes/reflection.h includes/utils.h includes/sessions.h includes/globals.h includes/externs.h includes/dynamicHTMLRenderer.h
 #  Implicit rule search has not been done.
-#  Last modified 2022-08-12 03:05:24.836154352
+#  Last modified 2022-08-13 19:41:17.427118967
 #  File has been updated.
 #  Successfully updated.
 #  recipe to execute (from 'Makefile', line 34):
@@ -407,28 +390,48 @@ build/obj/webServer.o: src/webServer.cpp includes/def.h includes/user_def.h incl
 # Not a target:
 includes/def.h:
 #  Implicit rule search has been done.
-#  Last modified 2022-08-02 00:16:50.022237719
+#  Last modified 2022-08-13 19:26:54.285882813
 #  File has been updated.
 #  Successfully updated.
 
 build/obj/responseHandler.o: src/responseHandler.cpp includes/def.h includes/user_def.h includes/includes.h includes/structDef.h includes/reflection.h includes/utils.h includes/sessions.h includes/globals.h includes/externs.h includes/dynamicHTMLRenderer.h
 #  Implicit rule search has not been done.
-#  Last modified 2022-08-12 03:05:25.888136723
+ 
+#  Implicit/static pattern stem: ''
+#  Last modified 2022-08-13 19:43:50.98957604
 #  File has been updated.
-#  Successfully updated.
+#  Needs to be updated (-q is set).
+# automatic
+# @ := build/obj/responseHandler.o
+# automatic
+# % := 
+# automatic
+# * := 
+# automatic
+# + := src/responseHandler.cpp includes/def.h includes/user_def.h includes/includes.h includes/structDef.h includes/reflection.h includes/utils.h includes/sessions.h includes/globals.h includes/externs.h includes/dynamicHTMLRenderer.h
+# automatic
+# | := 
+# automatic
+# < := src/responseHandler.cpp
+# automatic
+# ^ := src/responseHandler.cpp includes/def.h includes/user_def.h includes/includes.h includes/structDef.h includes/reflection.h includes/utils.h includes/sessions.h includes/globals.h includes/externs.h includes/dynamicHTMLRenderer.h
+# automatic
+# ? := src/responseHandler.cpp
+# variable set hash-table stats:
+# Load=8/32=25%, Rehash=0, Collisions=1/14=7%
 #  recipe to execute (from 'Makefile', line 31):
 	$(CC) -c $(SDIR)/responseHandler.cpp -o $@
 
 # Not a target:
 includes/dynamicHTMLRenderer.h:
 #  Implicit rule search has been done.
-#  Last modified 2022-08-12 02:44:36.873066887
+#  Last modified 2022-08-13 19:40:20.266570887
 #  File has been updated.
 #  Successfully updated.
 
 build/obj/sessions.o: src/sessions.cpp includes/def.h includes/user_def.h includes/includes.h includes/structDef.h includes/reflection.h includes/utils.h includes/sessions.h includes/globals.h includes/externs.h includes/dynamicHTMLRenderer.h
 #  Implicit rule search has not been done.
-#  Last modified 2022-08-12 03:05:25.196148319
+#  Last modified 2022-08-13 19:41:17.779123018
 #  File has been updated.
 #  Successfully updated.
 #  recipe to execute (from 'Makefile', line 25):
@@ -448,9 +451,10 @@ includes/globals.h:
 #  File has been updated.
 #  Successfully updated.
 
+ 
 build/obj/utils.o: src/utils.cpp includes/def.h includes/user_def.h includes/includes.h includes/structDef.h includes/reflection.h includes/utils.h includes/sessions.h includes/globals.h includes/externs.h includes/dynamicHTMLRenderer.h
 #  Implicit rule search has not been done.
-#  Last modified 2022-08-12 03:05:24.464160586
+#  Last modified 2022-08-13 19:41:17.067114823
 #  File has been updated.
 #  Successfully updated.
 #  recipe to execute (from 'Makefile', line 37):
@@ -459,14 +463,14 @@ build/obj/utils.o: src/utils.cpp includes/def.h includes/user_def.h includes/inc
 # Not a target:
 src/webServer.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-08-12 03:05:11.548377029
+#  Last modified 2022-08-13 19:41:11.363050396
 #  File has been updated.
 #  Successfully updated.
 
 # Not a target:
 src/responseHandler.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-08-11 21:05:25.875996576
+#  Last modified 2022-08-13 19:54:56.402100844
 #  File has been updated.
 #  Successfully updated.
 
@@ -478,12 +482,12 @@ src/responseHandler.cpp:
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 43 / storage = 599 B / avg = 13 B
-# current buf: size = 8162 B / used = 599 B / count = 43 / avg = 13 B
+# strcache buffers: 1 (0) / strings = 44 / storage = 618 B / avg = 14 B
+# current buf: size = 8162 B / used = 618 B / count = 44 / avg = 14 B
 
-# strcache performance: lookups = 116 / hit rate = 62%
+# strcache performance: lookups = 117 / hit rate = 62%
 # hash-table stats:
-# Load=43/8192=1%, Rehash=0, Collisions=7/116=6%
-# Finished Make data base on Sat Aug 13 01:22:14 2022
+# Load=44/8192=1%, Rehash=0, Collisions=7/117=6%
+# Finished Make data base on Sat Aug 13 20:12:45 2022
 
  
