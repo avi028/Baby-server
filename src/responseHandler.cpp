@@ -38,19 +38,31 @@ struct serviceResponse resolveRequest(struct urlDecode ud,struct reqHeader reque
     sr.responseHeader = NULL_str ; 
     sr.responseCode = HTTP_OK;
 
+    // set default response location based on resposne type
+    if(ud.ext == "html"){
+        sr.responseLocation = "/templates";
+    }else if(ud.ext == "css"){
+         sr.responseLocation = "/static/css";
+    }else if(ud.ext == "js"){
+         sr.responseLocation = "/static/js";
+        
+    }else if(ud.ext == "png" || ud.ext == "jpeg" || ud.ext == "jpg"){
+         sr.responseLocation = "/static/images";
+        
+    }else if(ud.ext == "ico"){
+        sr.responseLocation="";
+    }//for requests with no extension like /login /logout etc....
+    else if(ud.ext == NULL_str){
+        sr.responseLocation = "/templates";
+    }
+    
     // check if its static asset
     if(ud.ext == "js" || ud.ext == "ico" || ud.ext == "png" || ud.ext == "jpeg" || ud.ext == "css" || ud.ext == "jpg"){
         sr.response = ud.service+"."+ud.ext;
         return sr;
     }
-    
-    /**
-     *  Test website is a simple website to test session management 
-        with basic login and a dashboard to display your detail.
-        Below Code shows how the various page requests are being handled.
-    */
-
-    int cookieCount=0;
+        
+   int cookieCount=0;
     std::string  sessionKey = NULL_str;
 
     // Check if logged in or not 
@@ -98,14 +110,17 @@ struct serviceResponse resolveRequest(struct urlDecode ud,struct reqHeader reque
     }
 
     if(loggedIn){
-        if(ud.service== "/" || ud.service=="/index" || ud.service =="/register" || ud.service == "/dashboard"){
+        if(ud.service== "/" || ud.service=="/index" || ud.service =="/register" || ud.service == "/dashboard" || ud.service == "/login" ){
             /**
              * dynamic response for dashboard    
              * @brief make response -> dynamic renderd file location .
              *  response = call dynamicHTMLrender('requested FIle',user) 
+             *  response location is the dynamic file location for the output.
              */
             sr.response = "/dashboard.html";
-            sr.response =  dyHTMLRender<UserDetails>(user,sr.response);
+            sr.responseLocation = "/templates";
+            sr.response =  dyHTMLRender<UserDetails>(user,sr.responseLocation,sr.response);
+
         }
         else if(ud.service == "/logout"){
             removeSessionKey(sessionKey);
@@ -137,6 +152,7 @@ struct serviceResponse resolveRequest(struct urlDecode ud,struct reqHeader reque
          */
         if(ud.service == "/" || ud.service == "/index"){
             sr.response = "/index.html";
+            sr.responseLocation = "/templates";
         }
 
         // login page request
@@ -181,6 +197,7 @@ struct serviceResponse resolveRequest(struct urlDecode ud,struct reqHeader reque
             }
             else{
                 sr.response = "/login.html";    
+                sr.responseLocation = "/templates";
             }
         }
         // register page request
@@ -200,6 +217,7 @@ struct serviceResponse resolveRequest(struct urlDecode ud,struct reqHeader reque
             }
             else{
                 sr.response = "/register.html";
+                sr.responseLocation = "/templates";
             }
         }
         // dashboard page request

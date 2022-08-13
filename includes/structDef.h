@@ -77,8 +77,10 @@
     struct serviceResponse{
         std::string responseHeader;
         std::string response;
+        std::string responseLocation;
         int responseType;
         int responseCode;
+
     };
 
 #endif

@@ -26,6 +26,8 @@
     #define HTML_GET 9
     #define DEFAULT  10// "/"
 
+    #define DYNAMIC_PAGE_LOCATION "tmp"
+
     // Server Types 
     #define Thread_Based_Server  1
     #define Process_Based_Server  2

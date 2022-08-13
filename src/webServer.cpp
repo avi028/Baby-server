@@ -106,8 +106,11 @@ void * requestProcessor (void *param){
         if(url_decoded.valid){
             sr.responseHeader = "";
             sr = resolveRequest(url_decoded,requestHeader);
-            if(sr.response != "")
-                requestedFile = websiteFolder +  sr.response;
+
+            if(sr.response != "" && sr.responseLocation==DYNAMIC_PAGE_LOCATION)
+                requestedFile =  sr.responseLocation + sr.response;
+            else if(sr.response != "")
+                requestedFile = websiteFolder + sr.responseLocation + sr.response;
             else
                 requestedFile = "";
 
@@ -297,7 +300,7 @@ void requestHander(int listening_sock){
  */
 void handle_exit(){
     struct stat folderst;
-    std::string tmpFolder= websiteFolder + "/tmp" ; 
+    std::string tmpFolder= DYNAMIC_PAGE_LOCATION; 
     if(stat(tmpFolder.c_str(),&folderst)!=-1){
         std::cout<<"Deleting tmp files...."<<std::endl;
         std::string  tempDir = "rm  -r " + tmpFolder;

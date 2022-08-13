@@ -44,4 +44,4 @@ clean:
 run:
 	@echo "Website Folder name -> $(WebSiteFolderName)  IP -> $(IP_ADDRESS):$(PORT)"
 	@echo "------------------------------------------------------------------------"
-	-@build/./server
+	- @build/./server

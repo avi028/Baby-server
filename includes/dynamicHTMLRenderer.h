@@ -10,7 +10,7 @@
 #include "reflection.h"
 
 template<typename T>
-std::string dyHTMLRender (T& objInstance , std::string htmlfile);
+std::string dyHTMLRender (T& objInstance ,std::string & fileLocation, std::string htmlfile);
 
 template<typename T>
 std::string setAttributes(std::string data,T& dataStruct);
@@ -71,28 +71,32 @@ std::string setAttributes(std::string data,T& dataStruct){
  */
 
 template<typename T>
-std::string dyHTMLRender (T& objInstance , std::string htmlfile){
+std::string dyHTMLRender (T& objInstance ,std::string & fileLocation, std::string htmlfile){
 
     /*
     * Temprary folder for storing the rendered webpages.
     */
-    std::string tmpFolder= websiteFolder + "/tmp" ; 
+    std::string tmpFolder= DYNAMIC_PAGE_LOCATION ; 
     struct stat folderst;
     if(stat(tmpFolder.c_str(),&folderst)==-1){
         mkdir(tmpFolder.c_str(),0700);
     }
 
     std::string data = NULL_str;
-    std::string outfile = websiteFolder +  htmlfile;
-    std::ifstream f(websiteFolder +  htmlfile);
+    std::string infile  = websiteFolder +fileLocation + htmlfile;
+    std::string outfile = infile;
+    std::ifstream f(infile);
 
     if(f.good()){
         data = std::string((std::istreambuf_iterator<char>(f)) ,(std::istreambuf_iterator<char>())) ;    
         data = setAttributes(data,objInstance);
         f.close();
-        std::ofstream fout(websiteFolder + "/tmp"+htmlfile);
+
+        outfile = htmlfile;
+        fileLocation = tmpFolder;
+    
+        std::ofstream fout(tmpFolder + outfile);
         std::copy(data.begin() , data.end(), std::ostreambuf_iterator<char>(fout));
-        outfile = "/tmp"+htmlfile;
     }
  
     return outfile;

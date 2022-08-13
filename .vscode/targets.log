@@ -5,9 +5,8 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
- 
 
-# Make data base, printed on Fri Aug 12 03:06:55 2022
+# Make data base, printed on Sat Aug 13 01:22:14 2022
 
 # Variables
 
@@ -57,7 +56,6 @@ XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
 MAKEFILE_LIST :=  Makefile server_config.mk
 # environment
 JAVA_HOME = 
- 
 # automatic
 @F = $(notdir $@)
 # environment
@@ -91,7 +89,6 @@ XDG_RUNTIME_DIR = /run/user/1000
 # environment
 XDG_MENU_PREFIX = gnome-
 # environment
- 
 ELECTRON_RUN_AS_NODE = 1
 # makefile (from 'server_config.mk', line 6)
 PORT = 8080
@@ -106,7 +103,7 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 4779
+GIO_LAUNCHED_DESKTOP_FILE_PID = 49296
 # automatic
 %F = $(notdir $%)
 # makefile (from 'Makefile', line 12)
@@ -196,8 +193,6 @@ GDK_BACKEND = x11
 # automatic
 +F = $(notdir $+)
 # environment
-NO_AT_BRIDGE = 1
-# environment
 QT_ACCESSIBILITY = 1
 # default
 MAKEFILES := 
@@ -230,9 +225,9 @@ GJS_DEBUG_OUTPUT = stderr
 # environment
 LANG = C
 # environment
-VSCODE_PID = 4779
+VSCODE_PID = 49296
 # variable set hash-table stats:
-# Load=109/1024=11%, Rehash=0, Collisions=23/176=13%
+# Load=108/1024=11%, Rehash=0, Collisions=23/175=13%
 
 # Pattern-specific Variable Values
 
@@ -240,12 +235,11 @@ VSCODE_PID = 4779
 
 # Directories
 
-# . (device 2052, inode 6426474): 16 files, no impossibilities.
+# . (device 2052, inode 6426474): 15 files, no impossibilities.
 
-# 16 files, no impossibilities in 1 directories.
+# 15 files, no impossibilities in 1 directories.
 
 # Implicit Rules
- 
 
 # No implicit rules.
 
@@ -283,6 +277,7 @@ all: build/obj/utils.o build/obj/webServer.o build/obj/sessions.o build/obj/pars
 #  Command line target.
 #  Implicit rule search has not been done.
 #  Implicit/static pattern stem: ''
+ 
 #  File does not exist.
 #  File has been updated.
 #  Needs to be updated (-q is set).
@@ -339,7 +334,7 @@ build/obj/parsers.o: src/parsers.cpp includes/def.h includes/user_def.h includes
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-08-12 03:05:55.747636324
+#  Last modified 2022-08-12 03:11:52.375040912
 #  File has been updated.
 #  Successfully updated.
 
@@ -449,7 +444,6 @@ includes/user_def.h:
 # Not a target:
 includes/globals.h:
 #  Implicit rule search has been done.
- 
 #  Last modified 2022-08-12 03:03:38.581934985
 #  File has been updated.
 #  Successfully updated.
@@ -484,12 +478,12 @@ src/responseHandler.cpp:
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 44 / storage = 616 B / avg = 14 B
-# current buf: size = 8162 B / used = 616 B / count = 44 / avg = 14 B
+# strcache buffers: 1 (0) / strings = 43 / storage = 599 B / avg = 13 B
+# current buf: size = 8162 B / used = 599 B / count = 43 / avg = 13 B
 
-# strcache performance: lookups = 117 / hit rate = 62%
+# strcache performance: lookups = 116 / hit rate = 62%
 # hash-table stats:
-# Load=44/8192=1%, Rehash=0, Collisions=7/117=6%
-# Finished Make data base on Fri Aug 12 03:06:55 2022
+# Load=43/8192=1%, Rehash=0, Collisions=7/116=6%
+# Finished Make data base on Sat Aug 13 01:22:14 2022
 
  
